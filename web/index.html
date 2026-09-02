@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{SITE_NAME}}</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234F6EF7'%3E%3Cpath d='M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container site-header-inner">
+      <div class="brand">
+        <span class="brand-icon"><svg viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z"/></svg></span>
+        <span>{{SITE_NAME}}</span>
+      </div>
+      <a class="admin-entry" href="/{{DASHBOARD_PATH}}">管理员登录</a>
+    </div>
+  </header>
+
+  <main class="main-section">
+    <div class="container" style="display:flex;flex-direction:column;align-items:center;">
+      <section class="search-card">
+        <h1 class="search-title">邮箱黑名单查询</h1>
+        <p class="search-subtitle">输入社区成员邮箱，快速核验该用户是否已被拉黑</p>
+
+        <div class="search-box">
+          <div class="search-input-wrap">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input id="emailInput" class="search-input" type="text" inputmode="email" autocomplete="off" spellcheck="false" placeholder="请输入邮箱地址，例如 name@example.com">
+          </div>
+          <button id="searchBtn" class="search-btn" type="button">查询</button>
+        </div>
+
+        <div id="resultArea" class="result">
+          <div class="result-empty">
+            <div class="status-icon" style="background:#F1F5F9;color:#94A3B8;">⌕</div>
+            <p>输入邮箱地址开始查询</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="announcementCard" class="announcement-card" style="display:none;">
+        <div class="ann-title">公告</div>
+        <div id="announcementContent" class="markdown-body"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; 2026 {{SITE_NAME}} · 查询结果仅供社区参考</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+  <script src="/assets/js/common.js"></script>
+  <script src="/assets/js/home.js"></script>
+</body>
+</html>

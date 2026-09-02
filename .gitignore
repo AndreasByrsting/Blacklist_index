@@ -1,0 +1,23 @@
+# 运行时数据目录（SQLite 数据库与日志）
+/data/
+/logs/
+*.db
+*.db-shm
+*.db-wal
+
+# 编译产物
+*.exe
+*.dll
+*.so
+*.dylib
+binary
+
+# 测试产物
+*.test
+*.out
+coverage.txt
+
+# IDE / 系统
+.idea/
+.vscode/
+.DS_Store

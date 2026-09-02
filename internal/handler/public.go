@@ -1,0 +1,57 @@
+package handler
+
+import (
+	"errors"
+	"net/http"
+	"time"
+
+	"blacklist-index/internal/repository"
+	"blacklist-index/internal/service"
+)
+
+// Health 健康检查接口。
+func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
+	dbStatus := "up"
+	if err := h.db.PingContext(r.Context()); err != nil {
+		dbStatus = "down"
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"status": "ok",
+		"db":     dbStatus,
+		"uptime": int64(time.Since(h.started).Seconds()),
+	})
+}
+
+// Check 公开黑名单查询。
+func (h *Handler) Check(w http.ResponseWriter, r *http.Request) {
+	email := r.URL.Query().Get("email")
+	rec, err := h.blacklist.Check(email)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrInvalidEmail):
+			writeJSON(w, http.StatusBadRequest, map[string]any{"blocked": false, "message": "请输入有效的邮箱地址"})
+		case errors.Is(err, repository.ErrNotFound):
+			writeJSON(w, http.StatusOK, map[string]any{"blocked": false})
+		default:
+			h.writeError(w, err)
+		}
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"blocked":        true,
+		"reason_html":    service.RenderMarkdown(rec.BanReason),
+		"event_link":     rec.EventLink,
+		"related_people": rec.EventRelatedPeople,
+		"banned_at":      rec.BannedAt,
+	})
+}
+
+// Announcement 公开公告查询。
+func (h *Handler) Announcement(w http.ResponseWriter, r *http.Request) {
+	htmlContent, err := h.announcement.GetActiveHTML()
+	if err != nil {
+		h.writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"content_html": htmlContent})
+}

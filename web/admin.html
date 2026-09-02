@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{SITE_NAME}} · 管理后台</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234F6EF7'%3E%3Cpath d='M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body>
+  <!-- 登录视图 -->
+  <div id="loginView" class="auth-section" style="display:none;">
+    <div class="login-card">
+      <h2 class="login-title">管理员登录</h2>
+      <p class="login-sub">{{SITE_NAME}}</p>
+      <form id="loginForm">
+        <div class="form-field">
+          <label class="form-label">用户名</label>
+          <input class="form-input" type="text" value="admin" readonly>
+        </div>
+        <div class="form-field">
+          <label class="form-label">密码</label>
+          <input id="loginPassword" class="form-input" type="password" placeholder="请输入管理员密码" autocomplete="current-password">
+        </div>
+        <div class="form-field">
+          <label class="form-label">动态口令</label>
+          <input id="loginTotp" class="form-input" type="text" inputmode="numeric" maxlength="6" placeholder="6 位动态口令" autocomplete="one-time-code">
+        </div>
+        <div id="loginError" class="form-error"></div>
+        <button id="loginBtn" class="btn btn-primary btn-block" type="submit">登录</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 后台视图 -->
+  <div id="dashboardView" style="display:none;flex-direction:column;min-height:100vh;">
+    <header class="admin-topbar">
+      <div class="container admin-topbar-inner">
+        <div class="admin-topbar-left">
+          <span class="brand-icon"><svg viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z"/></svg></span>
+          <span class="admin-title">{{SITE_NAME}} · 管理后台</span>
+        </div>
+        <div class="admin-topbar-right">
+          <span class="admin-user"><span class="admin-user-dot"></span>admin</span>
+          <button id="logoutBtn" class="btn btn-secondary btn-sm" type="button">退出登录</button>
+        </div>
+      </div>
+    </header>
+
+    <nav class="tabs">
+      <div class="container tabs-inner">
+        <button class="tab active" data-tab="blacklist" type="button">黑名单管理</button>
+        <button class="tab" data-tab="announcement" type="button">公告编辑</button>
+        <button class="tab" data-tab="audit" type="button">审计日志</button>
+      </div>
+    </nav>
+
+    <main class="admin-main">
+      <div class="container">
+        <!-- 黑名单管理 -->
+        <div id="tab-blacklist" class="panel active">
+          <div class="toolbar">
+            <div class="search-group">
+              <div class="search-input-wrap">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input id="blSearch" class="search-input" type="text" placeholder="按邮箱或原因搜索">
+              </div>
+              <button id="blSearchBtn" class="search-btn" type="button">搜索</button>
+            </div>
+            <button id="addBtn" class="btn btn-primary" type="button">添加</button>
+            <button id="trashBtn" class="btn btn-secondary" type="button">回收站</button>
+          </div>
+
+          <div class="table-card">
+            <div class="table-wrap" id="blTableWrap"></div>
+            <div class="card-list" id="blCardList"></div>
+            <div class="empty-state" id="blEmpty" style="display:none;">
+              <div class="empty-icon">∅</div>
+              <div class="empty-text" id="blEmptyText">暂无数据</div>
+            </div>
+            <div class="pagination" id="blPagination"></div>
+          </div>
+        </div>
+
+        <!-- 公告编辑 -->
+        <div id="tab-announcement" class="panel">
+          <div class="announce-layout">
+            <div class="editor-pane">
+              <div class="pane-title">编辑</div>
+              <textarea id="annContent" class="form-input" rows="6" placeholder="支持 Markdown 语法"></textarea>
+              <div style="margin-top:12px;">
+                <button id="annTemplate" class="btn btn-secondary btn-sm" type="button">插入示例公告</button>
+              </div>
+            </div>
+            <div class="preview-pane">
+              <div class="pane-title">预览</div>
+              <div id="annPreview" class="markdown-body"></div>
+            </div>
+          </div>
+          <div class="announce-actions">
+            <button id="annSave" class="btn btn-primary" type="button">保存公告</button>
+          </div>
+        </div>
+
+        <!-- 审计日志 -->
+        <div id="tab-audit" class="panel">
+          <div class="toolbar">
+            <div class="search-group" style="max-width:280px;">
+              <select id="auditFilter" class="form-input">
+                <option value="">全部操作</option>
+                <option value="login">login</option>
+                <option value="logout">logout</option>
+                <option value="add">add</option>
+                <option value="delete">delete</option>
+                <option value="restore">restore</option>
+                <option value="edit_announcement">edit_announcement</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="table-wrap" id="auditTableWrap"></div>
+            <div class="card-list" id="auditCardList"></div>
+            <div class="empty-state" id="auditEmpty" style="display:none;">
+              <div class="empty-icon">∅</div>
+              <div class="empty-text">暂无日志</div>
+            </div>
+            <div class="pagination" id="auditPagination"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 添加弹窗 -->
+  <div id="addModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">添加黑名单</div>
+        <button class="modal-close" data-close="addModal" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="addForm">
+          <div class="form-field">
+            <label class="form-label">邮箱 *</label>
+            <input id="addEmail" class="form-input" type="email" placeholder="name@example.com" autocomplete="off" spellcheck="false">
+          </div>
+          <div class="form-field">
+            <label class="form-label">拉黑原因（支持 Markdown）</label>
+            <textarea id="addReason" class="form-input" rows="4" placeholder="描述被封禁的原因..."></textarea>
+          </div>
+          <div class="form-field">
+            <label class="form-label">事件链接</label>
+            <input id="addLink" class="form-input" type="url" placeholder="https://...">
+          </div>
+          <div class="form-field">
+            <label class="form-label">相关人（逗号分隔）</label>
+            <input id="addPeople" class="form-input" type="text" placeholder="张三, 李四">
+          </div>
+          <div class="form-field">
+            <label class="form-label">Ban 时间（留空为当前时间）</label>
+            <input id="addBannedAt" class="form-input" type="datetime-local">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close="addModal" type="button">取消</button>
+        <button id="addNextBtn" class="btn btn-primary" type="button">下一步</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 提交确认弹窗 -->
+  <div id="confirmSubmitModal" class="modal-overlay">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <div class="modal-title">确认提交</div>
+        <button class="modal-close" data-close="confirmSubmitModal" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="confirmSummary" style="font-size:0.875rem;line-height:1.7;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close="confirmSubmitModal" type="button">返回修改</button>
+        <button id="confirmSubmitBtn" class="btn btn-primary" type="button">确认提交</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 删除确认弹窗 -->
+  <div id="deleteModal" class="modal-overlay">
+    <div class="modal modal-sm">
+      <div class="modal-body confirm-center">
+        <div class="confirm-icon danger">✕</div>
+        <div class="confirm-title" id="deleteTitle">删除记录</div>
+        <div class="confirm-text" id="deleteText"></div>
+        <input id="deleteConfirmInput" class="form-input" type="text" placeholder="输入邮箱地址确认" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="modal-footer" style="justify-content:center;">
+        <button class="btn btn-secondary" data-close="deleteModal" type="button">取消</button>
+        <button id="deleteConfirmBtn" class="btn btn-danger-solid" type="button" disabled>确认删除</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast">
+    <span class="toast-icon"></span>
+    <span class="toast-msg"></span>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+  <script src="/assets/js/common.js"></script>
+  <script src="/assets/js/admin.js"></script>
+</body>
+</html>

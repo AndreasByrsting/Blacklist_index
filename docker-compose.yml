@@ -1,0 +1,22 @@
+services:
+  blacklist-index:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: blacklist-index:latest
+    container_name: blacklist-index
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # ===== 必填变量 =====
+      # 管理员密码：≥8 位，需同时包含大写字母、小写字母与数字
+      ADMIN_PASSWORD: "ChangeMe_Str0ngPass"
+      # TOTP 密钥：Base32 编码，≥16 字符（请自行更换为随机密钥）
+      TOTP_SECRET: "JBSWY3DPEHPK3PXP"
+      # ===== 可选变量 =====
+      TIMEZONE: "Asia/Shanghai"
+      PORT: "8080"
+      SITE_NAME: "邮箱黑名单查询"
+    volumes:
+      - ./data:/data
