@@ -55,12 +55,18 @@
 
 ```bash
 # 1. 修改 docker-compose.yml 中的 ADMIN_PASSWORD 与 TOTP_SECRET
-# 2. 构建并启动
+
+# 2. 仅打包镜像（需要单独构建产物时使用）
+docker build -t blacklist-index:latest .
+
+# 3. 构建并启动（推荐，一步完成构建与运行）
 docker compose up -d --build
 
-# 3. 查看日志，获取后台路径与 TOTP 绑定 URL
+# 4. 查看日志，获取后台路径与 TOTP 绑定 URL
 docker compose logs -f blacklist-index
 ```
+
+> 项目已提供 `.dockerignore`，构建时自动排除 `data/`、`data_smoke/`、数据库文件、日志与本地编译产物（`*.exe`），避免本地数据被打进镜像。数据通过 compose 的 `./data:/data` 挂载持久化，容器重建不丢失。
 
 首次启动时日志会输出：
 
