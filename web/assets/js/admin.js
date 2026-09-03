@@ -150,6 +150,11 @@
     window.location.href = '/';
   });
 
+  // ===== 返回首页（不退出登录） =====
+  $('homeBtn').addEventListener('click', function () {
+    window.location.href = '/';
+  });
+
   // ===== Tab 按钮 =====
   document.querySelectorAll('.tab').forEach(function (t) {
     t.addEventListener('click', function () { switchTab(t.getAttribute('data-tab')); });
@@ -361,7 +366,9 @@
     var reasonShort = truncate(m.reason, 40) || '—';
     var mainRow =
       '<tr class="review-row" data-id="' + s.id + '">' +
-      '<td><button class="row-toggle" type="button" data-toggle="' + s.id + '" aria-expanded="false">▸</button></td>' +
+      '<td><button class="row-toggle" type="button" data-toggle="' + s.id + '" aria-expanded="false">' +
+        '<svg class="row-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>' +
+        '</button></td>' +
       '<td>' + esc(s.id) + '</td>' +
       '<td>' + m.typeTag + '</td>' +
       '<td class="cell-email">' + esc(s.email) + '</td>' +
@@ -369,7 +376,7 @@
       '<td>' + escapeLink(m.evidence) + '</td>' +
       '<td><span class="' + m.statusClass + '">' + m.statusText + '</span></td>' +
       '<td>' + esc(s.created_at || '—') + '</td>' +
-      '<td class="users-actions">' + reviewActionButtons(s, m.canReview) + '</td>' +
+      '<td class="cell-actions">' + reviewActionButtons(s, m.canReview) + '</td>' +
       '</tr>';
     return mainRow + renderReviewDetail(s);
   }
@@ -476,8 +483,8 @@
       if (detail) {
         var shown = detail.style.display !== 'none';
         detail.style.display = shown ? 'none' : 'table-row';
+        toggle.classList.toggle('open', !shown);
         toggle.setAttribute('aria-expanded', shown ? 'false' : 'true');
-        toggle.textContent = shown ? '▸' : '▾';
       }
       return;
     }

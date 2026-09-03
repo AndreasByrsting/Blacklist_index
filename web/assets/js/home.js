@@ -20,6 +20,7 @@
 
   let inboxEmail = '';
   let hasAnnouncement = false;
+  let isAdminLoggedIn = false;
 
   const ICON_LOGIN = '<svg class="entry-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>';
   const ICON_BACK = '<svg class="entry-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>';
@@ -37,6 +38,10 @@
   }
 
   $('adminEntryBtn').addEventListener('click', function () {
+    if (isAdminLoggedIn) {
+      window.location.href = document.body.getAttribute('data-dashboard') || '/';
+      return;
+    }
     showLoginView($('loginCard').style.display === 'none');
   });
   document.addEventListener('keydown', function (e) {
@@ -142,6 +147,16 @@
     );
   }
 
+  function similarState() {
+    setResult(
+      '<div class="result-state result--similar">' +
+      '<div class="headline"><span class="status-icon">!</span>' +
+      '<div><div class="headline-text">该邮箱未被标记，但存在同名账户风险</div>' +
+      '<div class="desc">检测到与当前邮箱账户名相同的其他域名邮箱已被标记为不可信</div></div></div>' +
+      '</div>'
+    );
+  }
+
   function peopleChipsHTML(d) {
     let list = Array.isArray(d.related_people_list) && d.related_people_list.length
       ? d.related_people_list
@@ -194,6 +209,7 @@
     try {
       const data = await App.api('/api/v1/check?email=' + encodeURIComponent(email));
       if (data.blocked) blockedState(data);
+      else if (data.similar) similarState();
       else safeState();
     } catch (e) {
       App.toast('error', e.message);
@@ -485,5 +501,14 @@
         window.location.href = 'mailto:' + inboxEmail;
       });
     }
+  })();
+
+  // ===== 登录态检测：已登录则点击「管理员登录」直接进入后台 =====
+  (async function checkAdminStatus() {
+    try {
+      const data = await App.api('/api/v1/admin/status');
+      isAdminLoggedIn = !!data.logged_in;
+      if (isAdminLoggedIn) $('adminEntryLabel').textContent = '进入后台';
+    } catch (e) { /* 静默忽略 */ }
   })();
 })();

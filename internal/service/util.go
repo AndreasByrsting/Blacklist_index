@@ -109,3 +109,27 @@ func ParseBannedAt(s string, loc *time.Location) (string, error) {
 	}
 	return "", fmt.Errorf("无法解析时间 %q", s)
 }
+
+// NormalizeTime 将历史遗留的 "2006-01-02T15:04:05Z"（含字面 Z / 时区后缀）等格式
+// 统一规范为 model.TimeFormat。历史数据的时间数值本身已是目标时区，
+// 因此仅做格式规范化、不做时区偏移转换，避免时间被错误偏移（如 01:17 变 09:17）。
+func NormalizeTime(s string) string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return ""
+	}
+	if _, err := time.Parse(model.TimeFormat, s); err == nil {
+		return s
+	}
+	for _, layout := range []string{
+		"2006-01-02T15:04:05Z",
+		"2006-01-02T15:04:05",
+		time.RFC3339,
+		time.RFC3339Nano,
+	} {
+		if t, err := time.Parse(layout, s); err == nil {
+			return t.Format(model.TimeFormat)
+		}
+	}
+	return s
+}

@@ -32,6 +32,29 @@ func (r *BlacklistRepo) Check(email string) (*model.Blacklist, error) {
 	return b, err
 }
 
+// HasSimilarAccount 判断是否存在「@ 前账户名完全一致、但域名不同」的未删除记录。
+// 仅返回布尔状态，不暴露具体相似记录，避免泄露无关数据。
+func (r *BlacklistRepo) HasSimilarAccount(email string) (bool, error) {
+	local := email
+	if i := strings.Index(email, "@"); i >= 0 {
+		local = email[:i]
+	}
+	var one int
+	err := r.db.QueryRow(`
+		SELECT 1 FROM blacklist
+		WHERE deleted_at IS NULL
+		  AND email <> ?
+		  AND substr(email, 1, instr(email, '@') - 1) = ?
+		LIMIT 1`, email, local).Scan(&one)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // GetByID 按 ID 查询（含已软删除记录），用于回收站操作。
 func (r *BlacklistRepo) GetByID(id int64) (*model.Blacklist, error) {
 	row := r.db.QueryRow(`

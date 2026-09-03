@@ -276,9 +276,9 @@ func strongPassword(p string) bool {
 }
 
 const (
-	passwordLower  = "abcdefghijklmnopqrstuvwxyz"
-	passwordUpper  = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	passwordDigits = "0123456789"
+	passwordLower   = "abcdefghijklmnopqrstuvwxyz"
+	passwordUpper   = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	passwordDigits  = "0123456789"
 	passwordSymbols = "!@#$%^&*()-_=+[]{};:,.<>?"
 )
 

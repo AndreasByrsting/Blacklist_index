@@ -42,6 +42,16 @@ func (s *BlacklistService) Check(email string) (*model.Blacklist, error) {
 	return s.repo.Check(email)
 }
 
+// CheckSimilar 判断是否存在「账户名一致、域名不同」的不可信记录。
+// 仅返回状态，不暴露任何相似邮箱数据。
+func (s *BlacklistService) CheckSimilar(email string) (bool, error) {
+	email = NormalizeEmail(email)
+	if !ValidEmail(email) {
+		return false, ErrInvalidEmail
+	}
+	return s.repo.HasSimilarAccount(email)
+}
+
 // Add 新增一条黑名单记录；若该邮箱已被标记，则更新覆盖为最新内容。
 func (s *BlacklistService) Add(email, banReason, eventLink, relatedPeople, bannedAt, ip, ua string) (*model.Blacklist, error) {
 	email = NormalizeEmail(email)

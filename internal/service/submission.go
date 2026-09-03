@@ -131,6 +131,7 @@ func (s *SubmissionService) GetByQueryCode(code string) (*model.Submission, erro
 		}
 		return nil, err
 	}
+	s.normalizeTimes(sub)
 	return sub, nil
 }
 
@@ -142,7 +143,20 @@ func (s *SubmissionService) List(status string, typ string, page int, pageSize i
 	if pageSize < 1 || pageSize > 100 {
 		pageSize = 20
 	}
-	return s.repo.List(status, typ, page, pageSize)
+	list, total, err := s.repo.List(status, typ, page, pageSize)
+	if err != nil {
+		return nil, 0, err
+	}
+	for _, sub := range list {
+		s.normalizeTimes(sub)
+	}
+	return list, total, nil
+}
+
+// normalizeTimes 统一提交时间/审核时间为目标格式，兼容历史带 Z 后缀的数据。
+func (s *SubmissionService) normalizeTimes(sub *model.Submission) {
+	sub.CreatedAt = NormalizeTime(sub.CreatedAt)
+	sub.ReviewedAt = NormalizeTime(sub.ReviewedAt)
 }
 
 // Approve 通过申请（举报通过则加入黑名单；申诉通过则从黑名单移除）。
@@ -157,6 +171,7 @@ func (s *SubmissionService) Approve(id int64, reviewer, ip, ua string) (*model.S
 	if sub.Status != model.StatusPending {
 		return nil, ErrSubmissionNotPending
 	}
+	s.normalizeTimes(sub)
 
 	now := NowStr(s.location)
 	if sub.Type == model.TypeReport {
@@ -205,6 +220,7 @@ func (s *SubmissionService) Reject(id int64, reason string, reviewer, ip, ua str
 	if sub.Status != model.StatusPending {
 		return nil, ErrSubmissionNotPending
 	}
+	s.normalizeTimes(sub)
 
 	now := NowStr(s.location)
 	if err := s.repo.Reject(id, reason, reviewer, now); err != nil {

@@ -35,7 +35,13 @@ func (h *Handler) Check(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, service.ErrInvalidEmail):
 			writeJSON(w, http.StatusBadRequest, map[string]any{"blocked": false, "message": "请输入有效的邮箱地址"})
 		case errors.Is(err, repository.ErrNotFound):
-			writeJSON(w, http.StatusOK, map[string]any{"blocked": false})
+			// 未精确命中时，检查是否存在同名账户（不同域名）的不可信记录，仅返回状态。
+			similar, serr := h.blacklist.CheckSimilar(email)
+			if serr != nil {
+				h.writeError(w, serr)
+				return
+			}
+			writeJSON(w, http.StatusOK, map[string]any{"blocked": false, "similar": similar})
 		default:
 			h.writeError(w, err)
 		}
