@@ -105,9 +105,12 @@ func main() {
 	authSvc := service.NewAuthService(adminRepo, auditSvc, jwtSecret, cfg.Location)
 	blacklistSvc := service.NewBlacklistService(blacklistRepo, auditSvc, cfg.Location)
 	announcementSvc := service.NewAnnouncementService(announcementRepo, cfg.Location)
+	settingSvc := service.NewSettingService(configRepo, auditSvc)
+	submissionRepo := repository.NewSubmissionRepo(database)
+	submissionSvc := service.NewSubmissionService(submissionRepo, blacklistSvc, auditSvc, cfg.Location)
 
 	// Handler 与路由
-	h := handler.New(cfg, database, blacklistSvc, authSvc, announcementSvc, auditSvc, jwtSecret)
+	h := handler.New(cfg, database, blacklistSvc, authSvc, announcementSvc, auditSvc, settingSvc, submissionSvc, jwtSecret)
 	assets, err := fs.Sub(webFS, "web")
 	if err != nil {
 		slog.Error("加载静态资源失败", "err", err)
@@ -170,23 +173,28 @@ func getOrCreate(repo *repository.ConfigRepo, key string, gen func() string) (st
 	return v, nil
 }
 
-// initAdmin 若管理员不存在则用环境变量创建，返回是否新建。
+// initAdmin 若管理员不存在则用环境变量创建超级管理员，返回是否新建。
 func initAdmin(repo *repository.AdminRepo, cfg *config.Config) (bool, error) {
-	if _, err := repo.GetAdmin(); err == nil {
-		return false, nil
-	} else if !errors.Is(err, repository.ErrNotFound) {
+	count, err := repo.Count()
+	if err != nil {
 		return false, err
+	}
+	if count > 0 {
+		return false, nil
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(cfg.AdminPassword), 12)
 	if err != nil {
 		return false, err
 	}
 	a := &model.AdminUser{
+		Username:     "admin",
 		PasswordHash: string(hash),
 		TOTPSecret:   cfg.TOTPSecret,
+		IsSuper:      true,
 		CreatedAt:    service.NowStr(cfg.Location),
+		CreatedBy:    "system",
 	}
-	if err := repo.CreateAdmin(a); err != nil {
+	if err := repo.Create(a); err != nil {
 		return false, err
 	}
 	return true, nil

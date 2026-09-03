@@ -9,14 +9,23 @@ import (
 	"blacklist-index/internal/repository"
 )
 
-// 审计操作类型常量。
+// 审计操作类型常量（存储为英文编码，前端展示时映射为中文）。
 const (
 	ActionLogin            = "login"
 	ActionLogout           = "logout"
 	ActionAdd              = "add"
+	ActionUpdate           = "update"
 	ActionDelete           = "delete"
 	ActionRestore          = "restore"
 	ActionEditAnnouncement = "edit_announcement"
+	ActionEditSettings     = "edit_settings"
+	ActionChangePassword   = "change_password"
+	ActionCreateAdmin      = "create_admin"
+	ActionResetPassword    = "reset_password"
+	ActionResetTOTP        = "reset_totp"
+	ActionDeleteAdmin      = "delete_admin"
+	ActionApproveSub       = "approve_submission"
+	ActionRejectSub        = "reject_submission"
 )
 
 // AuditService 负责审计日志的写入与查询。

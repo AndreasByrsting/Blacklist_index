@@ -1,15 +1,32 @@
 package service
 
 import (
+	"errors"
 	"fmt"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"blacklist-index/internal/model"
 )
 
 var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
+
+// MaxReasonLen 标记原因的最大字符数。
+const MaxReasonLen = 500
+
+// MaxAppealReasonLen 申诉理由的最大字符数。
+const MaxAppealReasonLen = 500
+
+// 链接校验相关错误。
+var (
+	// ErrLinkHTTPSRequired 表示链接必须使用 HTTPS。
+	ErrLinkHTTPSRequired = errors.New("链接必须使用 HTTPS 协议")
+	// ErrLinkDomainUnsupported 表示链接域名不在白名单内。
+	ErrLinkDomainUnsupported = errors.New("为了用户安全暂不支持该网站，仅支持 tieba.baidu.com，后续将逐步适配")
+)
 
 // NormalizeEmail 统一转小写并去除首尾空白。
 func NormalizeEmail(s string) string {
@@ -19,6 +36,57 @@ func NormalizeEmail(s string) string {
 // ValidEmail 校验邮箱格式。
 func ValidEmail(s string) bool {
 	return len(s) <= 254 && emailRegex.MatchString(s)
+}
+
+// NormalizeLink 规范化事件链接：去除首尾空白，无协议时自动补全 https://。
+func NormalizeLink(s string) string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return ""
+	}
+	lower := strings.ToLower(s)
+	if strings.HasPrefix(lower, "http://") || strings.HasPrefix(lower, "https://") {
+		return s
+	}
+	return "https://" + s
+}
+
+// ValidateLink 校验链接（需先经 NormalizeLink 规范化，保证已带协议）。
+// 要求使用 HTTPS，且域名必须为 tieba.baidu.com（含其子域名），其余站点拒绝以保障用户安全。
+func ValidateLink(s string) error {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return nil
+	}
+	u, err := url.Parse(s)
+	if err != nil || u.Host == "" {
+		return fmt.Errorf("链接格式无效")
+	}
+	if !strings.EqualFold(u.Scheme, "https") {
+		return ErrLinkHTTPSRequired
+	}
+	host := strings.ToLower(u.Hostname())
+	if host != "tieba.baidu.com" && !strings.HasSuffix(host, ".tieba.baidu.com") {
+		return ErrLinkDomainUnsupported
+	}
+	return nil
+}
+
+// SplitRelatedPeople 按中英文逗号拆分相关人并去除空白项。
+func SplitRelatedPeople(s string) []string {
+	fields := strings.FieldsFunc(s, func(r rune) bool { return r == ',' || r == '，' || r == '、' })
+	out := make([]string, 0, len(fields))
+	for _, f := range fields {
+		if f = strings.TrimSpace(f); f != "" {
+			out = append(out, f)
+		}
+	}
+	return out
+}
+
+// ReasonTooLong 判断拉黑原因是否超出长度限制。
+func ReasonTooLong(s string) bool {
+	return utf8.RuneCountInString(s) > MaxReasonLen
 }
 
 // NowStr 返回配置时区下的当前时间字符串。

@@ -1,33 +1,62 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{SITE_NAME}}</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234F6EF7'%3E%3Cpath d='M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z'/%3E%3C/svg%3E">
+  <link rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234F6EF7'%3E%3Cpath d='M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="/assets/css/style.css">
 </head>
-<body>
+
+<body data-dashboard="/{{DASHBOARD_PATH}}">
   <header class="site-header">
     <div class="container site-header-inner">
       <div class="brand">
-        <span class="brand-icon"><svg viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z"/></svg></span>
+        <span class="brand-icon"><svg viewBox="0 0 24 24">
+            <path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z" />
+          </svg></span>
         <span>{{SITE_NAME}}</span>
       </div>
-      <a class="admin-entry" href="/{{DASHBOARD_PATH}}">管理员登录</a>
+      <button id="adminEntryBtn" class="admin-entry" type="button">
+        <svg class="entry-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        <span id="adminEntryLabel">管理员登录</span>
+      </button>
     </div>
   </header>
 
   <main class="main-section">
-    <div class="container" style="display:flex;flex-direction:column;align-items:center;">
-      <section class="search-card">
-        <h1 class="search-title">邮箱黑名单查询</h1>
-        <p class="search-subtitle">输入社区成员邮箱，快速核验该用户是否已被拉黑</p>
+    <div class="container main-center">
+      <!-- 查询卡片 -->
+      <section id="searchCard" class="search-card">
+        <div class="search-head">
+          <h1 class="search-title">不可信邮箱查询</h1>
+          <p class="search-subtitle">输入社区成员邮箱，快速核验该邮箱是否已被标记为不可信</p>
+        </div>
 
         <div class="search-box">
-          <div class="search-input-wrap">
-            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <input id="emailInput" class="search-input" type="text" inputmode="email" autocomplete="off" spellcheck="false" placeholder="请输入邮箱地址，例如 name@example.com">
+          <div class="search-input-wrap has-suffix">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round">
+              <circle cx="11" cy="11" r="7"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input id="emailInput" class="search-input" type="text" inputmode="email" autocomplete="off"
+              spellcheck="false" placeholder="请输入邮箱地址">
+            <button id="suffixBtn" class="suffix-btn" type="button" aria-haspopup="true" aria-expanded="false"
+              title="快速补全邮箱后缀">
+              <span>@</span>
+              <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+            <div id="suffixMenu" class="suffix-menu"></div>
           </div>
           <button id="searchBtn" class="search-btn" type="button">查询</button>
         </div>
@@ -38,6 +67,61 @@
             <p>输入邮箱地址开始查询</p>
           </div>
         </div>
+
+        <div id="submitBlWrap" class="search-extra" style="display:none;">
+          <div class="home-actions">
+            <button id="submitBlBtn" class="btn-ghost" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+              <span>邮箱上报</span>
+            </button>
+            <button id="querySubBtn" class="btn-ghost" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <circle cx="11" cy="11" r="7"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <span>查询进度</span>
+            </button>
+            <button id="contactAdminBtn" class="btn-ghost" type="button" style="display:none;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <span>联系管理员</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 管理员登录卡片 -->
+      <section id="loginCard" class="search-card home-login-card" style="display:none;">
+        <div class="search-head">
+          <h2 class="search-title">管理员登录</h2>
+          <p class="search-subtitle">输入用户名、密码与动态口令进入后台</p>
+        </div>
+
+        <form id="homeLoginForm" class="home-login-form">
+          <div class="form-field">
+            <label class="form-label" for="homeUsername">用户名</label>
+            <input id="homeUsername" class="form-input" type="text" placeholder="请输入用户名" autocomplete="username"
+              spellcheck="false">
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="homePassword">密码</label>
+            <input id="homePassword" class="form-input" type="password" placeholder="请输入管理员密码"
+              autocomplete="current-password">
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="homeTotp">动态口令</label>
+            <input id="homeTotp" class="form-input" type="text" inputmode="numeric" maxlength="6" placeholder="6 位动态口令"
+              autocomplete="one-time-code">
+          </div>
+          <div id="homeLoginError" class="form-error"></div>
+          <button id="homeLoginBtn" class="btn btn-primary btn-block" type="submit">登录后台</button>
+        </form>
       </section>
 
       <section id="announcementCard" class="announcement-card" style="display:none;">
@@ -51,8 +135,202 @@
     <p>&copy; 2026 {{SITE_NAME}} · 查询结果仅供社区参考</p>
   </footer>
 
+  <div id="toast" class="toast">
+    <span class="toast-icon"></span>
+    <span class="toast-msg"></span>
+  </div>
+
+  <!-- 邮箱上报弹窗（提交不可信邮箱 / 邮箱申诉） -->
+  <div id="submitModal" class="modal-overlay">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <div class="modal-title">邮箱上报</div>
+        <button class="modal-close" data-close="submitModal" type="button">✕</button>
+      </div>
+      <div class="sub-tabs" role="tablist">
+        <button id="tabReport" class="sub-tab active" type="button" data-tab="report">提交不可信邮箱</button>
+        <button id="tabAppeal" class="sub-tab" type="button" data-tab="appeal">邮箱申诉</button>
+      </div>
+      <div class="modal-body">
+        <!-- 提交不可信邮箱 -->
+        <div id="panelReport" class="sub-panel active">
+          <div class="report-notice">
+            <div class="report-notice-icon">!</div>
+            <div class="report-notice-text">
+              <div class="report-notice-title">提交须知</div>
+              <div class="report-notice-desc">
+                请确保举报内容真实合法，<strong>事件链接为必填项</strong>（需提供贴吧 tieba.baidu.com 的 HTTPS 公开链接）。
+                恶意举报或虚假信息将被驳回。提交后将生成查询码，可用于跟踪审核进度。
+              </div>
+            </div>
+          </div>
+          <form id="reportForm" class="form-stack">
+            <div class="form-field">
+              <label class="form-label" for="reportEmail">邮箱地址 <span class="required">*</span></label>
+              <input id="reportEmail" class="form-input" type="text" inputmode="email" autocomplete="off"
+                spellcheck="false" placeholder="请输入要举报的邮箱">
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="reportReason">标记原因 <span class="required">*</span></label>
+              <textarea id="reportReason" class="form-textarea" rows="4" maxlength="500"
+                placeholder="请简要说明该邮箱的不可信行为（最多 500 字）"></textarea>
+              <div class="form-hint form-hint-right"><span id="reportReasonCount">0</span>/500</div>
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="reportLink">事件链接 <span class="required">*</span></label>
+              <input id="reportLink" class="form-input" type="text" placeholder="https://tieba.baidu.com/p/...">
+              <div class="form-hint">需提供贴吧的 HTTPS 公开链接（暂仅支持 tieba.baidu.com）</div>
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="reportPeople">相关人员</label>
+              <input id="reportPeople" class="form-input" type="text" placeholder="可选，多人用逗号分隔">
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-secondary" data-close="submitModal" type="button">取消</button>
+              <button id="reportSubmitBtn" class="btn btn-primary" type="button">提交上报</button>
+            </div>
+          </form>
+        </div>
+        <!-- 邮箱申诉 -->
+        <div id="panelAppeal" class="sub-panel">
+          <div class="report-notice">
+            <div class="report-notice-icon">i</div>
+            <div class="report-notice-text">
+              <div class="report-notice-title">申诉须知</div>
+              <div class="report-notice-desc">
+                如您认为邮箱被误标记，请填写申诉理由并提供<strong>反驳证据链接（必填）</strong>（需贴吧 tieba.baidu.com 的 HTTPS 公开链接）。
+                管理员审核通过后将解除标记。提交后将生成查询码，可用于跟踪审核进度。
+              </div>
+            </div>
+          </div>
+          <form id="appealForm" class="form-stack">
+            <div class="form-field">
+              <label class="form-label" for="appealEmail">邮箱地址 <span class="required">*</span></label>
+              <input id="appealEmail" class="form-input" type="text" inputmode="email" autocomplete="off"
+                spellcheck="false" placeholder="请输入被标记的邮箱">
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="appealReason">申诉理由 <span class="required">*</span></label>
+              <textarea id="appealReason" class="form-textarea" rows="5" maxlength="500"
+                placeholder="请详细说明申诉理由（最多 500 字）"></textarea>
+              <div class="form-hint form-hint-right"><span id="appealReasonCount">0</span>/500</div>
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="appealEvidence">反驳证据链接 <span class="required">*</span></label>
+              <input id="appealEvidence" class="form-input" type="text" placeholder="需提供能证明清白的 tieba.baidu.com 链接">
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-secondary" data-close="submitModal" type="button">取消</button>
+              <button id="appealSubmitBtn" class="btn btn-primary" type="button">提交申诉</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3秒延时确认弹窗（用户提交上报） -->
+  <div id="userDelayConfirmModal" class="modal-overlay">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <div class="modal-title">确认提交</div>
+        <button class="modal-close" data-close="userDelayConfirmModal" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="delay-confirm-list">
+          <ul>
+            <li>我确认提交的内容真实、合法，不存在恶意举报</li>
+            <li>我已核实事件链接有效，能够作为证据</li>
+            <li>我理解虚假标记可能导致被追究相应责任</li>
+          </ul>
+        </div>
+        <div class="delay-confirm-tip">
+          请仔细阅读上述内容，<span class="delay-countdown" id="userDelayCountdown">3</span> 秒后可确认提交
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close="userDelayConfirmModal" type="button">返回修改</button>
+        <button id="userDelayConfirmBtn" class="btn btn-primary" type="button" disabled>确认提交</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 查询申请进度弹窗 -->
+  <div id="querySubModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">查询申请进度</div>
+        <button class="modal-close" data-close="querySubModal" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-field">
+          <label class="form-label" for="querySubInput">查询码</label>
+          <div style="display:flex;gap:8px;">
+            <input id="querySubInput" class="form-input" type="text" placeholder="请输入 12 位查询码" style="flex:1;"
+              spellcheck="false">
+            <button id="querySubGoBtn" class="btn btn-primary" type="button">查询</button>
+          </div>
+        </div>
+        <div id="querySubResult" style="display:none;">
+          <div class="sub-result-card">
+            <div class="sub-result-row">
+              <span class="sub-result-label">类型</span>
+              <span class="sub-result-value" id="qrType">—</span>
+            </div>
+            <div class="sub-result-row">
+              <span class="sub-result-label">邮箱</span>
+              <span class="sub-result-value" id="qrEmail">—</span>
+            </div>
+            <div class="sub-result-row">
+              <span class="sub-result-label">状态</span>
+              <span class="sub-result-value" id="qrStatus">—</span>
+            </div>
+            <div class="sub-result-row">
+              <span class="sub-result-label">提交时间</span>
+              <span class="sub-result-value" id="qrCreated">—</span>
+            </div>
+            <div id="qrReviewedRow" class="sub-result-row" style="display:none;">
+              <span class="sub-result-label">审核时间</span>
+              <span class="sub-result-value" id="qrReviewed">—</span>
+            </div>
+            <div id="qrRejectRow" class="sub-result-row sub-result-reject" style="display:none;">
+              <span class="sub-result-label">驳回原因</span>
+              <span class="sub-result-value" id="qrRejectReason">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 提交成功弹窗（显示查询码） -->
+  <div id="submitSuccessModal" class="modal-overlay">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <div class="modal-title">提交成功</div>
+      </div>
+      <div class="modal-body" style="text-align:center;">
+        <div class="success-icon">✓</div>
+        <p style="color:var(--text-secondary);font-size:0.875rem;margin-bottom:16px;">
+          您的申请已提交，请保留好查询码以便跟踪审核进度
+        </p>
+        <div class="query-code-display">
+          <span class="query-code-label">查询码</span>
+          <div class="query-code-box">
+            <span id="successQueryCode">—</span>
+            <button class="copy-btn" type="button" data-copy="successQueryCode">复制</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary btn-block" data-close="submitSuccessModal" type="button">我知道了</button>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
   <script src="/assets/js/common.js"></script>
   <script src="/assets/js/home.js"></script>
 </body>
+
 </html>

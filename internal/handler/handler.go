@@ -16,13 +16,17 @@ type Handler struct {
 	auth         *service.AuthService
 	announcement *service.AnnouncementService
 	audit        *service.AuditService
+	setting      *service.SettingService
+	submission   *service.SubmissionService
+	queryLimiter *service.RateLimiter
 	jwtSecret    []byte
 	started      time.Time
 }
 
 // New 构造 Handler。
 func New(cfg *config.Config, db *sql.DB, blacklist *service.BlacklistService, auth *service.AuthService,
-	announcement *service.AnnouncementService, audit *service.AuditService, jwtSecret []byte) *Handler {
+	announcement *service.AnnouncementService, audit *service.AuditService, setting *service.SettingService,
+	submission *service.SubmissionService, jwtSecret []byte) *Handler {
 	return &Handler{
 		cfg:          cfg,
 		db:           db,
@@ -30,6 +34,9 @@ func New(cfg *config.Config, db *sql.DB, blacklist *service.BlacklistService, au
 		auth:         auth,
 		announcement: announcement,
 		audit:        audit,
+		setting:      setting,
+		submission:   submission,
+		queryLimiter: service.NewRateLimiter(10, time.Minute, 5*time.Minute),
 		jwtSecret:    jwtSecret,
 		started:      time.Now(),
 	}

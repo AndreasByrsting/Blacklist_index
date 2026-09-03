@@ -17,6 +17,9 @@ binary
 *.out
 coverage.txt
 
+# 冒烟测试数据目录
+/data_smoke/
+
 # IDE / 系统
 .idea/
 .vscode/

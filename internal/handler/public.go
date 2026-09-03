@@ -24,6 +24,10 @@ func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
 
 // Check 公开黑名单查询。
 func (h *Handler) Check(w http.ResponseWriter, r *http.Request) {
+	if !h.queryLimiter.Allow(clientIP(r)) {
+		writeJSON(w, http.StatusTooManyRequests, map[string]any{"blocked": false, "message": "查询过于频繁，请 5 分钟后再试"})
+		return
+	}
 	email := r.URL.Query().Get("email")
 	rec, err := h.blacklist.Check(email)
 	if err != nil {
@@ -38,12 +42,23 @@ func (h *Handler) Check(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"blocked":        true,
-		"reason_html":    service.RenderMarkdown(rec.BanReason),
-		"event_link":     rec.EventLink,
-		"related_people": rec.EventRelatedPeople,
-		"banned_at":      rec.BannedAt,
+		"blocked":             true,
+		"reason_html":         service.RenderMarkdown(rec.BanReason),
+		"event_link":          rec.EventLink,
+		"related_people":      rec.EventRelatedPeople,
+		"related_people_list": service.SplitRelatedPeople(rec.EventRelatedPeople),
+		"banned_at":           rec.BannedAt,
 	})
+}
+
+// SiteConfig 公开站点配置（用于首页提报按钮等展示逻辑）。
+func (h *Handler) SiteConfig(w http.ResponseWriter, r *http.Request) {
+	inbox, err := h.setting.GetInbox()
+	if err != nil {
+		h.writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"inbox_email": inbox})
 }
 
 // Announcement 公开公告查询。

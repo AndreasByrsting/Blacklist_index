@@ -26,7 +26,7 @@ func Load() (*Config, error) {
 		AdminPassword: os.Getenv("ADMIN_PASSWORD"),
 		TOTPSecret:    strings.TrimSpace(os.Getenv("TOTP_SECRET")),
 		Port:          getEnv("PORT", "8080"),
-		SiteName:      getEnv("SITE_NAME", "邮箱黑名单查询"),
+		SiteName:      getEnv("SITE_NAME", "不可信邮箱查询"),
 		DataDir:       getEnv("DATA_DIR", "./data"),
 	}
 

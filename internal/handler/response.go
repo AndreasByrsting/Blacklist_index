@@ -44,11 +44,53 @@ func (h *Handler) writeError(w http.ResponseWriter, err error) {
 	case errors.Is(err, service.ErrInvalidEmail):
 		status, msg = http.StatusBadRequest, "请输入有效的邮箱地址"
 	case errors.Is(err, service.ErrEmailExists):
-		status, msg = http.StatusConflict, "该邮箱已在黑名单中"
+		status, msg = http.StatusConflict, "该邮箱已被标记为不可信"
+	case errors.Is(err, service.ErrReasonTooLong):
+		status, msg = http.StatusBadRequest, err.Error()
+	case errors.Is(err, service.ErrReportReasonTooLong):
+		status, msg = http.StatusBadRequest, err.Error()
+	case errors.Is(err, service.ErrAppealReasonTooLong):
+		status, msg = http.StatusBadRequest, err.Error()
+	case errors.Is(err, service.ErrRejectReasonTooLong):
+		status, msg = http.StatusBadRequest, err.Error()
+	case errors.Is(err, service.ErrEventLinkRequired):
+		status, msg = http.StatusBadRequest, err.Error()
+	case errors.Is(err, service.ErrInTrash):
+		status, msg = http.StatusBadRequest, err.Error()
 	case errors.Is(err, service.ErrBadCredentials):
 		status, msg = http.StatusUnauthorized, "用户名或动态口令错误"
+	case errors.Is(err, service.ErrWrongPassword):
+		status, msg = http.StatusBadRequest, "当前密码错误"
+	case errors.Is(err, service.ErrWeakPassword):
+		status, msg = http.StatusBadRequest, "新密码需至少 8 位，且同时包含大写字母、小写字母和数字"
+	case errors.Is(err, service.ErrInvalidUsername):
+		status, msg = http.StatusBadRequest, err.Error()
+	case errors.Is(err, service.ErrUsernameExists):
+		status, msg = http.StatusConflict, err.Error()
+	case errors.Is(err, service.ErrCannotDeleteSelf):
+		status, msg = http.StatusBadRequest, err.Error()
+	case errors.Is(err, service.ErrNeedAtLeastOneSuper):
+		status, msg = http.StatusBadRequest, err.Error()
 	case errors.Is(err, service.ErrTooManyAttempts):
 		status, msg = http.StatusTooManyRequests, "尝试次数过多，请 15 分钟后再试"
+	case errors.Is(err, service.ErrSubmissionNotFound):
+		status, msg = http.StatusNotFound, "申请不存在，请检查查询码"
+	case errors.Is(err, service.ErrSubmissionNotPending):
+		status, msg = http.StatusBadRequest, "该申请已处理，无法重复审核"
+	case errors.Is(err, service.ErrReasonRequired):
+		status, msg = http.StatusBadRequest, "请填写标记原因"
+	case errors.Is(err, service.ErrEventLinkRequired):
+		status, msg = http.StatusBadRequest, err.Error()
+	case errors.Is(err, service.ErrAppealReasonRequired):
+		status, msg = http.StatusBadRequest, "请填写申诉理由"
+	case errors.Is(err, service.ErrAppealEvidenceRequired):
+		status, msg = http.StatusBadRequest, "反驳证据链接为必填项，请提供有效链接"
+	case errors.Is(err, service.ErrRejectReasonRequired):
+		status, msg = http.StatusBadRequest, "请填写驳回原因"
+	case errors.Is(err, service.ErrLinkHTTPSRequired):
+		status, msg = http.StatusBadRequest, "链接必须使用 HTTPS 协议"
+	case errors.Is(err, service.ErrLinkDomainUnsupported):
+		status, msg = http.StatusBadRequest, "为了用户安全暂不支持该网站，仅支持 tieba.baidu.com，后续将逐步适配"
 	case errors.Is(err, repository.ErrNotFound):
 		status, msg = http.StatusNotFound, "记录不存在"
 	default:

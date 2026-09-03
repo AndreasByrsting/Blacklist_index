@@ -1,12 +1,16 @@
-# 黑名单邮箱索引工具
+# 不可信邮箱查询工具
 
-社区用户查询黑名单邮箱、管理员维护黑名单与公告的轻量级 Web 工具。工具属性优先，注重页面美观度与交互体验。
+社区用户查询不可信邮箱、管理员维护不可信邮箱名单与公告的轻量级 Web 工具。工具属性优先，注重页面美观度与交互体验。
 
 ## 功能特性
 
-- **公开查询**：输入邮箱即时返回是否在黑名单中，展示拉黑原因（Markdown）、事件外链、相关人、拉黑时间
+- **公开查询**：输入邮箱即时返回是否被标记为不可信，展示标记原因（Markdown）、事件外链、相关人（名字块三色循环）、标记时间
+- **邮箱后缀补全**：搜索框右侧下拉快速补全国内常见邮箱与 Gmail 后缀
+- **管理员登录**：首页点击「管理员登录」切换显示登录表单，点击「返回首页」返回查询
+- **不可信邮箱提报**：管理员配置收件箱后，首页显示「提交不可信邮箱」按钮，点击拉起本机邮件应用并回填收件人
 - **公告展示**：首页公告卡片，Markdown 渲染，无公告自动隐藏
-- **管理后台**：黑名单增删改查、软删除回收站（可还原/永久删除）、公告编辑与即时预览、审计日志
+- **管理后台**：不可信邮箱增改删查、软删除回收站（可还原/永久删除）、公告编辑与即时预览、审计日志（中文操作类型）
+- **系统设置**：收件箱配置（邮箱格式校验）、管理员修改密码（需验证当前密码）
 - **安全**：密码 bcrypt（cost 12）、TOTP 双因素认证（RFC 6238）、JWT（HttpOnly Cookie）、登录失败限流、SQL 占位符防注入、Markdown 消毒
 - **部署友好**：纯 Go SQLite 驱动（无 CGO）、Docker 多阶段构建、非 root 运行、/data 持久化
 
@@ -69,7 +73,7 @@ docker compose logs -f blacklist-index
 export ADMIN_PASSWORD='Aa12345678.'
 export TOTP_SECRET='JBSWY3DPEHPK3PXP'   # 请替换为随机 Base32 密钥
 export TIMEZONE='Asia/Shanghai'
-export SITE_NAME='邮箱黑名单查询'
+export SITE_NAME='不可信邮箱查询'
 export PORT=8080
 
 go run .
@@ -83,7 +87,7 @@ go run .
 | `TOTP_SECRET` | TOTP 密钥（Base32，≥16 字符） | 是 | - |
 | `TIMEZONE` | 时区（如 `Asia/Shanghai`） | 否 | `Asia/Shanghai` |
 | `PORT` | 服务端口 | 否 | `8080` |
-| `SITE_NAME` | 站点名称 | 否 | 邮箱黑名单查询 |
+| `SITE_NAME` | 站点名称 | 否 | 不可信邮箱查询 |
 | `DATA_DIR` | 数据目录（数据库与日志） | 否 | `./data` |
 
 > `ADMIN_PASSWORD` 与 `TOTP_SECRET` 仅在**首次启动创建管理员**时使用；之后修改环境变量不会覆盖已存在的管理员。
@@ -102,8 +106,9 @@ go run .
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/api/v1/check?email=x` | 查询邮箱（返回 `blocked`、`reason_html` 等） |
+| GET | `/api/v1/check?email=x` | 查询邮箱（返回 `blocked`、`reason_html`、`related_people_list` 等） |
 | GET | `/api/v1/announcement` | 获取生效公告（返回 `content_html`） |
+| GET | `/api/v1/site-config` | 站点配置（返回 `inbox_email`，未配置为空） |
 | GET | `/health` | 健康检查（`status`、`db`、`uptime`） |
 
 ### 管理（需登录 JWT Cookie）
@@ -113,14 +118,20 @@ go run .
 | POST | `/api/v1/admin/login` | 登录 |
 | POST | `/api/v1/admin/logout` | 退出登录 |
 | GET | `/api/v1/admin/status` | 登录状态 |
-| GET | `/api/v1/admin/list?q=&deleted=&page=&page_size=` | 黑名单列表 |
-| POST | `/api/v1/admin/add` | 新增黑名单 |
+| GET | `/api/v1/admin/list?q=&deleted=&page=&page_size=` | 不可信邮箱列表 |
+| POST | `/api/v1/admin/add` | 新增不可信邮箱 |
+| PUT | `/api/v1/admin/update/{id}` | 修改不可信邮箱 |
 | DELETE | `/api/v1/admin/delete/{id}` | 软删除（进回收站） |
 | POST | `/api/v1/admin/restore/{id}` | 从回收站恢复 |
 | DELETE | `/api/v1/admin/permanent/{id}` | 永久删除 |
 | GET | `/api/v1/admin/announcement` | 获取公告原始 Markdown |
 | PUT | `/api/v1/admin/announcement` | 保存公告 |
 | GET | `/api/v1/admin/audit-logs?action=&page=&page_size=` | 审计日志 |
+| POST | `/api/v1/admin/password` | 修改管理员密码 |
+| GET | `/api/v1/admin/settings` | 获取站点设置（收件箱） |
+| PUT | `/api/v1/admin/settings` | 保存站点设置（收件箱） |
+
+> 业务规则：事件链接无协议时自动补全 `https://`；标记原因最多 500 字；相关人支持中英文逗号（及顿号）分隔。
 
 ## 安全说明
 
@@ -135,7 +146,7 @@ go run .
 
 ## 设计说明
 
-- **软删除**：黑名单表在需求基础上增加 `deleted_at` 列以支持回收站；`email` 的唯一性通过**部分唯一索引**（仅约束未删除记录）实现，从而支持删除后重新添加同名邮箱
+- **软删除**：不可信邮箱表在需求基础上增加 `deleted_at` 列以支持回收站；`email` 的唯一性通过**部分唯一索引**（仅约束未删除记录）实现，从而支持删除后重新添加同名邮箱
 - **JWT 密钥**：首次启动随机生成并持久化到 `app_config` 表，重启不失效
 - **审计保留策略**：保留最近 10,000 条，每写入 100 条触发一次清理
 - **时间处理**：所有时间以 `TIMEZONE` 配置时区存储与展示

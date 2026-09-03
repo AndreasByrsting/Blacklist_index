@@ -16,15 +16,16 @@ var ErrInvalidToken = errors.New("invalid token")
 // Claims JWT 载荷。
 type Claims struct {
 	Username string `json:"username"`
+	IsSuper  bool   `json:"is_super"`
 	Exp      int64  `json:"exp"`
 }
 
 func b64(raw []byte) string { return base64.RawURLEncoding.EncodeToString(raw) }
 
 // GenerateJWT 签发 HS256 JWT。
-func GenerateJWT(username string, secret []byte, ttl time.Duration) (string, error) {
+func GenerateJWT(username string, isSuper bool, secret []byte, ttl time.Duration) (string, error) {
 	header := b64([]byte(`{"alg":"HS256","typ":"JWT"}`))
-	payload, err := json.Marshal(Claims{Username: username, Exp: time.Now().Add(ttl).Unix()})
+	payload, err := json.Marshal(Claims{Username: username, IsSuper: isSuper, Exp: time.Now().Add(ttl).Unix()})
 	if err != nil {
 		return "", err
 	}

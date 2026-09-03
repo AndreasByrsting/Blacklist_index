@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"blacklist-index/internal/model"
@@ -9,10 +10,16 @@ import (
 )
 
 var (
-	// ErrEmailExists 表示邮箱已存在于黑名单。
-	ErrEmailExists = errors.New("该邮箱已在黑名单中")
+	// ErrEmailExists 表示邮箱已被标记为不可信。
+	ErrEmailExists = errors.New("该邮箱已被标记为不可信")
 	// ErrInvalidEmail 表示邮箱格式非法。
 	ErrInvalidEmail = errors.New("请输入有效的邮箱地址")
+	// ErrReasonTooLong 表示标记原因超出长度限制。
+	ErrReasonTooLong = fmt.Errorf("标记原因过长，最多 %d 字", MaxReasonLen)
+	// ErrEventLinkRequired 表示事件链接为必填项。
+	ErrEventLinkRequired = errors.New("事件链接为必填项，请提供有效的证据链接")
+	// ErrInTrash 表示记录在回收站中不可编辑。
+	ErrInTrash = errors.New("回收站中的记录不可编辑，请先还原")
 )
 
 // BlacklistService 负责黑名单业务逻辑。
@@ -35,20 +42,46 @@ func (s *BlacklistService) Check(email string) (*model.Blacklist, error) {
 	return s.repo.Check(email)
 }
 
-// Add 新增一条黑名单记录。
+// Add 新增一条黑名单记录；若该邮箱已被标记，则更新覆盖为最新内容。
 func (s *BlacklistService) Add(email, banReason, eventLink, relatedPeople, bannedAt, ip, ua string) (*model.Blacklist, error) {
 	email = NormalizeEmail(email)
 	if !ValidEmail(email) {
 		return nil, ErrInvalidEmail
 	}
-	if _, err := s.repo.Check(email); err == nil {
-		return nil, ErrEmailExists
-	} else if !errors.Is(err, repository.ErrNotFound) {
+	if ReasonTooLong(banReason) {
+		return nil, ErrReasonTooLong
+	}
+
+	eventLink = NormalizeLink(eventLink)
+	if eventLink == "" {
+		return nil, ErrEventLinkRequired
+	}
+	if err := ValidateLink(eventLink); err != nil {
 		return nil, err
 	}
 
 	bannedAtParsed, err := ParseBannedAt(bannedAt, s.loc)
 	if err != nil {
+		return nil, err
+	}
+
+	// 已存在未删除记录时，以最新内容覆盖更新。
+	if existing, err := s.repo.Check(email); err == nil {
+		updated := &model.Blacklist{
+			Email:              email,
+			BanReason:          banReason,
+			BanReasonRaw:       MarkdownToPlain(banReason),
+			EventLink:          eventLink,
+			EventRelatedPeople: relatedPeople,
+			BannedAt:           bannedAtParsed,
+		}
+		if err := s.repo.Update(existing.ID, updated); err != nil {
+			return nil, err
+		}
+		updated.ID = existing.ID
+		s.audit.Log("admin", ActionUpdate, email, ip, ua)
+		return updated, nil
+	} else if !errors.Is(err, repository.ErrNotFound) {
 		return nil, err
 	}
 
@@ -67,6 +100,59 @@ func (s *BlacklistService) Add(email, banReason, eventLink, relatedPeople, banne
 	}
 	s.audit.Log("admin", ActionAdd, email, ip, ua)
 	return rec, nil
+}
+
+// Update 按 ID 修改黑名单记录。
+func (s *BlacklistService) Update(id int64, email, banReason, eventLink, relatedPeople, bannedAt, ip, ua string) (*model.Blacklist, error) {
+	rec, err := s.repo.GetByID(id)
+	if err != nil {
+		return nil, err
+	}
+	if rec.DeletedAt != nil {
+		return nil, ErrInTrash
+	}
+
+	email = NormalizeEmail(email)
+	if !ValidEmail(email) {
+		return nil, ErrInvalidEmail
+	}
+	if ReasonTooLong(banReason) {
+		return nil, ErrReasonTooLong
+	}
+	exists, err := s.repo.ExistsEmail(email, id)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return nil, ErrEmailExists
+	}
+
+	eventLink = NormalizeLink(eventLink)
+	if eventLink == "" {
+		return nil, ErrEventLinkRequired
+	}
+	if err := ValidateLink(eventLink); err != nil {
+		return nil, err
+	}
+
+	bannedAtParsed, err := ParseBannedAt(bannedAt, s.loc)
+	if err != nil {
+		return nil, err
+	}
+
+	updated := &model.Blacklist{
+		Email:              email,
+		BanReason:          banReason,
+		BanReasonRaw:       MarkdownToPlain(banReason),
+		EventLink:          eventLink,
+		EventRelatedPeople: relatedPeople,
+		BannedAt:           bannedAtParsed,
+	}
+	if err := s.repo.Update(id, updated); err != nil {
+		return nil, err
+	}
+	s.audit.Log("admin", ActionUpdate, email, ip, ua)
+	return updated, nil
 }
 
 // List 分页列表。deleted=true 表示回收站。

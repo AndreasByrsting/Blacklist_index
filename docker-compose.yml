@@ -17,6 +17,6 @@ services:
       # ===== 可选变量 =====
       TIMEZONE: "Asia/Shanghai"
       PORT: "8080"
-      SITE_NAME: "邮箱黑名单查询"
+      SITE_NAME: "不可信邮箱查询"
     volumes:
       - ./data:/data

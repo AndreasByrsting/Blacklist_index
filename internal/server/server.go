@@ -28,22 +28,44 @@ func New(h *handler.Handler, dashboardPath, siteName string, assets fs.FS) http.
 	mux.HandleFunc("GET /health", h.Health)
 	mux.HandleFunc("GET /api/v1/check", h.Check)
 	mux.HandleFunc("GET /api/v1/announcement", h.Announcement)
+	mux.HandleFunc("GET /api/v1/site-config", h.SiteConfig)
 	mux.HandleFunc("POST /api/v1/admin/login", h.Login)
 	mux.HandleFunc("GET /api/v1/admin/status", h.Status)
+	mux.HandleFunc("POST /api/v1/submit/report", h.SubmitReport)
+	mux.HandleFunc("POST /api/v1/submit/appeal", h.SubmitAppeal)
+	mux.HandleFunc("GET /api/v1/submission", h.QuerySubmission)
 
 	// —— 需登录接口 ——
 	auth := func(next http.HandlerFunc) http.HandlerFunc {
 		return middleware.RequireAuth(h.JWTSecret(), next)
 	}
+	superAuth := func(next http.HandlerFunc) http.HandlerFunc {
+		return middleware.RequireSuper(h.JWTSecret(), next)
+	}
 	mux.HandleFunc("POST /api/v1/admin/logout", auth(h.Logout))
 	mux.HandleFunc("GET /api/v1/admin/list", auth(h.ListBlacklist))
 	mux.HandleFunc("POST /api/v1/admin/add", auth(h.AddBlacklist))
+	mux.HandleFunc("PUT /api/v1/admin/update/{id}", auth(h.UpdateBlacklist))
 	mux.HandleFunc("DELETE /api/v1/admin/delete/{id}", auth(h.DeleteBlacklist))
 	mux.HandleFunc("POST /api/v1/admin/restore/{id}", auth(h.RestoreBlacklist))
 	mux.HandleFunc("DELETE /api/v1/admin/permanent/{id}", auth(h.PermanentDeleteBlacklist))
 	mux.HandleFunc("PUT /api/v1/admin/announcement", auth(h.UpdateAnnouncement))
 	mux.HandleFunc("GET /api/v1/admin/announcement", auth(h.GetAnnouncement))
 	mux.HandleFunc("GET /api/v1/admin/audit-logs", auth(h.AuditLogs))
+	mux.HandleFunc("POST /api/v1/admin/password", auth(h.ChangePassword))
+	mux.HandleFunc("GET /api/v1/admin/settings", auth(h.GetSettings))
+	mux.HandleFunc("PUT /api/v1/admin/settings", superAuth(h.SaveSettings))
+	mux.HandleFunc("GET /api/v1/admin/submissions", auth(h.ListSubmissions))
+	mux.HandleFunc("POST /api/v1/admin/submissions/{id}/approve", auth(h.ApproveSubmission))
+	mux.HandleFunc("POST /api/v1/admin/submissions/{id}/reject", auth(h.RejectSubmission))
+
+	// —— 超级管理员：用户管理 ——
+	mux.HandleFunc("GET /api/v1/admin/users", superAuth(h.ListAdmins))
+	mux.HandleFunc("POST /api/v1/admin/users", superAuth(h.CreateAdmin))
+	mux.HandleFunc("GET /api/v1/admin/users/{id}/totp", superAuth(h.GetAdminTOTP))
+	mux.HandleFunc("POST /api/v1/admin/users/{id}/password", superAuth(h.ResetAdminPassword))
+	mux.HandleFunc("POST /api/v1/admin/users/{id}/totp", superAuth(h.ResetAdminTOTP))
+	mux.HandleFunc("DELETE /api/v1/admin/users/{id}", superAuth(h.DeleteAdmin))
 
 	// —— 静态页面 ——
 	mux.HandleFunc("GET /{$}", s.serveIndex)
@@ -51,6 +73,9 @@ func New(h *handler.Handler, dashboardPath, siteName string, assets fs.FS) http.
 	mux.HandleFunc("GET /favicon.ico", s.serveFavicon)
 	mux.HandleFunc("GET /"+dashboardPath, s.serveAdmin)
 	mux.HandleFunc("GET /"+dashboardPath+"/", s.serveAdmin)
+
+	// 未匹配的路径（404 等）统一重定向回首页。
+	mux.HandleFunc("/", s.redirectHome)
 
 	var root http.Handler = mux
 	root = middleware.Recover(root)
@@ -60,6 +85,11 @@ func New(h *handler.Handler, dashboardPath, siteName string, assets fs.FS) http.
 
 func (s *Server) serveIndex(w http.ResponseWriter, r *http.Request) {
 	s.serveHTML(w, r, "index.html")
+}
+
+// redirectHome 将未匹配的路径重定向回首页。
+func (s *Server) redirectHome(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func (s *Server) serveAdmin(w http.ResponseWriter, r *http.Request) {
