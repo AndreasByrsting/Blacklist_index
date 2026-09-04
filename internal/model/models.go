@@ -6,16 +6,18 @@ const TimeFormat = "2006-01-02 15:04:05"
 
 // Blacklist 表示一条不可信邮箱记录。
 type Blacklist struct {
-	ID                 int64   `json:"id"`
-	Email              string  `json:"email"`
-	BanReason          string  `json:"ban_reason"`
-	BanReasonRaw       string  `json:"ban_reason_raw"`
-	EventLink          string  `json:"event_link"`
-	EventRelatedPeople string  `json:"event_related_people"`
-	BannedAt           string  `json:"banned_at"`
-	CreatedBy          string  `json:"created_by"`
-	CreatedAt          string  `json:"created_at"`
-	DeletedAt          *string `json:"deleted_at,omitempty"`
+	ID                 int64              `json:"id"`
+	Email              string             `json:"email"`
+	BanReason          string             `json:"ban_reason"`
+	BanReasonRaw       string             `json:"ban_reason_raw"`
+	EventLink          string             `json:"event_link"`
+	EventRelatedPeople string             `json:"event_related_people"`
+	BannedAt           string             `json:"banned_at"`
+	CreatedBy          string             `json:"created_by"`
+	CreatedAt          string             `json:"created_at"`
+	DeletedAt          *string            `json:"deleted_at,omitempty"`
+	SubmissionID       int64              `json:"submission_id"`
+	Images             []*SubmissionImage `json:"images,omitempty"`
 }
 
 // AdminUser 表示管理员账号。
@@ -85,4 +87,17 @@ type Submission struct {
 	CreatedAt          string           `json:"created_at"`
 	ReviewedAt         string           `json:"reviewed_at"`
 	ReviewedBy         string           `json:"reviewed_by"`
+	Images             []*SubmissionImage `json:"images,omitempty"`
+}
+
+// SubmissionImage 表示一笔提交关联的证据图片元数据。
+// URL 在服务层拼接，供后台审核页直接以 <img> 加载。
+type SubmissionImage struct {
+	ID           int64  `json:"id"`
+	SubmissionID int64  `json:"submission_id"`
+	FileHash     string `json:"file_hash"`
+	Ext          string `json:"ext"`
+	Size         int64  `json:"size"`
+	SortOrder    int    `json:"sort_order"`
+	URL          string `json:"url,omitempty"`
 }

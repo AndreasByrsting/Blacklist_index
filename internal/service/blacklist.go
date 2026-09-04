@@ -39,7 +39,14 @@ func (s *BlacklistService) Check(email string) (*model.Blacklist, error) {
 	if !ValidEmail(email) {
 		return nil, ErrInvalidEmail
 	}
-	return s.repo.Check(email)
+	rec, err := s.repo.Check(email)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.attachImages(rec, "/api/v1/image/"); err != nil {
+		return nil, err
+	}
+	return rec, nil
 }
 
 // CheckSimilar 判断是否存在「账户名一致、域名不同」的不可信记录。
@@ -53,7 +60,7 @@ func (s *BlacklistService) CheckSimilar(email string) (bool, error) {
 }
 
 // Add 新增一条黑名单记录；若该邮箱已被标记，则更新覆盖为最新内容。
-func (s *BlacklistService) Add(email, banReason, eventLink, relatedPeople, bannedAt, ip, ua string) (*model.Blacklist, error) {
+func (s *BlacklistService) Add(email, banReason, eventLink, relatedPeople, bannedAt string, domains []string, submissionID int64, ip, ua string) (*model.Blacklist, error) {
 	email = NormalizeEmail(email)
 	if !ValidEmail(email) {
 		return nil, ErrInvalidEmail
@@ -63,11 +70,10 @@ func (s *BlacklistService) Add(email, banReason, eventLink, relatedPeople, banne
 	}
 
 	eventLink = NormalizeLink(eventLink)
-	if eventLink == "" {
-		return nil, ErrEventLinkRequired
-	}
-	if err := ValidateLink(eventLink); err != nil {
-		return nil, err
+	if eventLink != "" {
+		if err := ValidateLinkWithDomains(eventLink, domains); err != nil {
+			return nil, err
+		}
 	}
 
 	bannedAtParsed, err := ParseBannedAt(bannedAt, s.loc)
@@ -84,6 +90,7 @@ func (s *BlacklistService) Add(email, banReason, eventLink, relatedPeople, banne
 			EventLink:          eventLink,
 			EventRelatedPeople: relatedPeople,
 			BannedAt:           bannedAtParsed,
+			SubmissionID:       submissionID,
 		}
 		if err := s.repo.Update(existing.ID, updated); err != nil {
 			return nil, err
@@ -104,6 +111,7 @@ func (s *BlacklistService) Add(email, banReason, eventLink, relatedPeople, banne
 		BannedAt:           bannedAtParsed,
 		CreatedBy:          "admin",
 		CreatedAt:          NowStr(s.loc),
+		SubmissionID:       submissionID,
 	}
 	if err := s.repo.Create(rec); err != nil {
 		return nil, err
@@ -113,7 +121,7 @@ func (s *BlacklistService) Add(email, banReason, eventLink, relatedPeople, banne
 }
 
 // Update 按 ID 修改黑名单记录。
-func (s *BlacklistService) Update(id int64, email, banReason, eventLink, relatedPeople, bannedAt, ip, ua string) (*model.Blacklist, error) {
+func (s *BlacklistService) Update(id int64, email, banReason, eventLink, relatedPeople, bannedAt string, domains []string, ip, ua string) (*model.Blacklist, error) {
 	rec, err := s.repo.GetByID(id)
 	if err != nil {
 		return nil, err
@@ -138,11 +146,10 @@ func (s *BlacklistService) Update(id int64, email, banReason, eventLink, related
 	}
 
 	eventLink = NormalizeLink(eventLink)
-	if eventLink == "" {
-		return nil, ErrEventLinkRequired
-	}
-	if err := ValidateLink(eventLink); err != nil {
-		return nil, err
+	if eventLink != "" {
+		if err := ValidateLinkWithDomains(eventLink, domains); err != nil {
+			return nil, err
+		}
 	}
 
 	bannedAtParsed, err := ParseBannedAt(bannedAt, s.loc)
@@ -157,6 +164,7 @@ func (s *BlacklistService) Update(id int64, email, banReason, eventLink, related
 		EventLink:          eventLink,
 		EventRelatedPeople: relatedPeople,
 		BannedAt:           bannedAtParsed,
+		SubmissionID:       rec.SubmissionID,
 	}
 	if err := s.repo.Update(id, updated); err != nil {
 		return nil, err
@@ -171,7 +179,29 @@ func (s *BlacklistService) List(query string, deleted bool, page, pageSize int) 
 		page = 1
 	}
 	offset := (page - 1) * pageSize
-	return s.repo.List(query, offset, pageSize, deleted)
+	list, total, err := s.repo.List(query, offset, pageSize, deleted)
+	if err != nil {
+		return nil, 0, err
+	}
+	for _, b := range list {
+		if err := s.attachImages(b, "/api/v1/image/"); err != nil {
+			return nil, 0, err
+		}
+	}
+	return list, total, nil
+}
+
+// attachImages 关联黑名单记录的证据图片元数据并拼接可加载的 URL。
+func (s *BlacklistService) attachImages(b *model.Blacklist, urlPrefix string) error {
+	images, err := s.repo.ListImages(b.SubmissionID)
+	if err != nil {
+		return err
+	}
+	for _, img := range images {
+		img.URL = urlPrefix + img.FileHash + "." + img.Ext
+	}
+	b.Images = images
+	return nil
 }
 
 // Delete 软删除（移入回收站）。

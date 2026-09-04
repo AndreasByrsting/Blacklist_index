@@ -18,7 +18,8 @@ func Migrate(database *sql.DB) error {
 			banned_at           DATETIME,
 			created_by          TEXT DEFAULT '',
 			created_at          DATETIME,
-			deleted_at          DATETIME
+			deleted_at          DATETIME,
+			submission_id       INTEGER NOT NULL DEFAULT 0
 		)`,
 		// 普通索引：按邮箱查询（含回收站记录）
 		`CREATE INDEX IF NOT EXISTS idx_email ON blacklist(email)`,
@@ -71,6 +72,17 @@ func Migrate(database *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_submissions_status ON submissions(status)`,
 		`CREATE INDEX IF NOT EXISTS idx_submissions_type ON submissions(type)`,
 		`CREATE INDEX IF NOT EXISTS idx_submissions_email ON submissions(email)`,
+
+		`CREATE TABLE IF NOT EXISTS submission_images (
+			id            INTEGER PRIMARY KEY AUTOINCREMENT,
+			submission_id INTEGER NOT NULL,
+			file_hash     TEXT NOT NULL,
+			ext           TEXT NOT NULL DEFAULT '',
+			size          INTEGER NOT NULL DEFAULT 0,
+			sort_order    INTEGER NOT NULL DEFAULT 0,
+			FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_submission_images_submission ON submission_images(submission_id)`,
 	}
 
 	for _, s := range stmts {
@@ -84,7 +96,25 @@ func Migrate(database *sql.DB) error {
 		return fmt.Errorf("admin_user 表初始化失败: %w", err)
 	}
 
+	// blacklist 增量迁移：旧库补充 submission_id 列（关联产生该记录的举报申请，用于展示证据图片）
+	if err := ensureBlacklistSubmissionID(database); err != nil {
+		return fmt.Errorf("blacklist submission_id 迁移失败: %w", err)
+	}
+
 	return nil
+}
+
+// ensureBlacklistSubmissionID 给已存在的 blacklist 表补充 submission_id 列（幂等）。
+func ensureBlacklistSubmissionID(db *sql.DB) error {
+	var n int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM pragma_table_info('blacklist') WHERE name='submission_id'`).Scan(&n); err != nil {
+		return err
+	}
+	if n > 0 {
+		return nil
+	}
+	_, err := db.Exec(`ALTER TABLE blacklist ADD COLUMN submission_id INTEGER NOT NULL DEFAULT 0`)
+	return err
 }
 
 // ensureAdminUserTable 确保 admin_user 表存在且为 v2 结构（含 username/is_super/created_by）。

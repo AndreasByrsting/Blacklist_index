@@ -2223,9 +2223,19 @@ table.data-table {
   color: var(--primary);
 }
 
+.settings-icon-link {
+  background: #ECFDF5;
+  color: #059669;
+}
+
 .settings-icon-lock {
   background: #FFF7ED;
   color: #EA580C;
+}
+
+.settings-icon-trash {
+  background: var(--danger-bg);
+  color: var(--danger);
 }
 
 .settings-card-title {
@@ -2558,4 +2568,268 @@ table.data-table {
     animation-duration: 0.001s !important;
     transition-duration: 0.001s !important;
   }
+}
+
+/* ===== 图片上传区域 ===== */
+.settings-icon-img {
+  background: #F5F3FF;
+  color: #7C5CFC;
+}
+
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-input);
+  padding: 24px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition);
+  background: var(--input-bg);
+}
+
+.upload-zone:hover {
+  border-color: var(--primary);
+  background: var(--primary-bg);
+}
+
+.upload-zone.dragover {
+  border-color: var(--primary);
+  background: var(--primary-bg);
+}
+
+.upload-zone-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.upload-zone-inner svg {
+  width: 28px;
+  height: 28px;
+  color: var(--primary);
+  opacity: 0.7;
+}
+
+.upload-zone-hint {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+/* ===== 首页图片预览网格 ===== */
+.img-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.img-thumb {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  border-radius: var(--radius-tag);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.img-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.img-thumb-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition);
+}
+
+.img-thumb-remove:hover {
+  background: var(--danger);
+}
+
+/* ===== 审核详情图片缩略图 ===== */
+.rd-img-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rd-img-thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-tag);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--card);
+  cursor: pointer;
+  padding: 0;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.rd-img-thumb:hover {
+  border-color: var(--primary);
+  box-shadow: 0 2px 12px rgba(79, 110, 247, 0.2);
+}
+
+.rd-img-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ===== Lightbox 图片放大 ===== */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(15, 23, 42, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 1.125rem;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.lightbox-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  max-width: 90vw;
+  max-height: 90vh;
+}
+
+.lightbox-img {
+  max-width: 90vw;
+  max-height: calc(90vh - 48px);
+  border-radius: 8px;
+  box-shadow: 0 8px 48px rgba(0, 0, 0, 0.4);
+  object-fit: contain;
+}
+
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition);
+  z-index: 2;
+}
+
+.lightbox-nav:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.lightbox-prev {
+  left: 24px;
+}
+
+.lightbox-next {
+  right: 24px;
+}
+
+.lightbox-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.lightbox-dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition);
+}
+
+.lightbox-dot:hover {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.lightbox-dot.active {
+  width: 12px;
+  height: 12px;
+  background: #fff;
+}
+
+/* ===== 证据图片展示（公开不可信卡与后台编辑页）===== */
+.evidence-img-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.evidence-img {
+  display: block;
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-tag);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--card);
+  cursor: pointer;
+  padding: 0;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.evidence-img:hover {
+  border-color: var(--primary);
+  box-shadow: 0 2px 12px rgba(79, 110, 247, 0.2);
+}
+
+.evidence-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }

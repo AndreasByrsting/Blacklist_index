@@ -26,6 +26,7 @@ const (
 	ActionDeleteAdmin      = "delete_admin"
 	ActionApproveSub       = "approve_submission"
 	ActionRejectSub        = "reject_submission"
+	ActionCleanupImages    = "cleanup_images"
 )
 
 // AuditService 负责审计日志的写入与查询。

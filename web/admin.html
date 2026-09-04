@@ -173,6 +173,7 @@
                 <option value="delete_admin">删除管理员</option>
                 <option value="approve_submission">通过申请</option>
                 <option value="reject_submission">驳回申请</option>
+                <option value="cleanup_images">清理不可达文件</option>
               </select>
             </div>
           </div>
@@ -207,6 +208,103 @@
                 <div class="form-hint">留空保存则隐藏首页「联系管理员」按钮</div>
               </div>
               <button id="inboxSaveBtn" class="btn btn-primary" type="button">保存收件箱</button>
+            </div>
+
+            <div class="settings-card" id="reportLinkSettingsCard" style="display:none;">
+              <div class="settings-card-head">
+                <span class="settings-card-icon settings-icon-link">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                </span>
+                <div>
+                  <div class="settings-card-title">举报证据链配置</div>
+                  <div class="settings-card-desc">控制用户举报时证据链接的必填性与域名白名单。留空域名表示不限。</div>
+                </div>
+              </div>
+              <div class="form-field">
+                <label class="form-label"><input id="reportEvidenceRequired" type="checkbox" checked> 证据链接必填</label>
+              </div>
+              <div class="form-field">
+                <label class="form-label" for="reportLinkDomains">允许的域名（逗号分隔）</label>
+                <input id="reportLinkDomains" class="form-input" type="text" placeholder="tieba.baidu.com" autocomplete="off" spellcheck="false">
+                <div class="form-hint">留空表示不限制域名；多个域名用逗号分隔</div>
+              </div>
+              <button id="reportLinkSaveBtn" class="btn btn-primary" type="button">保存举报配置</button>
+            </div>
+
+            <div class="settings-card" id="appealLinkSettingsCard" style="display:none;">
+              <div class="settings-card-head">
+                <span class="settings-card-icon settings-icon-link">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                </span>
+                <div>
+                  <div class="settings-card-title">申诉证据链配置</div>
+                  <div class="settings-card-desc">控制用户申诉时反驳证据链接的必填性与域名白名单。留空域名表示不限。</div>
+                </div>
+              </div>
+              <div class="form-field">
+                <label class="form-label"><input id="appealEvidenceRequired" type="checkbox" checked> 证据链接必填</label>
+              </div>
+              <div class="form-field">
+                <label class="form-label" for="appealLinkDomains">允许的域名（逗号分隔）</label>
+                <input id="appealLinkDomains" class="form-input" type="text" placeholder="tieba.baidu.com" autocomplete="off" spellcheck="false">
+                <div class="form-hint">留空表示不限制域名；多个域名用逗号分隔</div>
+              </div>
+              <button id="appealLinkSaveBtn" class="btn btn-primary" type="button">保存申诉配置</button>
+            </div>
+
+            <div class="settings-card" id="reportImageSettingsCard" style="display:none;">
+              <div class="settings-card-head">
+                <span class="settings-card-icon settings-icon-img">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                </span>
+                <div>
+                  <div class="settings-card-title">举报图片配置</div>
+                  <div class="settings-card-desc">控制用户举报时证据图片的必填性与最大数量。上限 0 表示不限。</div>
+                </div>
+              </div>
+              <div class="form-field">
+                <label class="form-label"><input id="reportImageRequired" type="checkbox"> 证据图片必填</label>
+              </div>
+              <div class="form-field">
+                <label class="form-label" for="reportImageMax">最大数量（0=不限，最大 9）</label>
+                <input id="reportImageMax" class="form-input" type="number" min="0" max="9" value="3" style="width:120px;">
+              </div>
+              <button id="reportImageSaveBtn" class="btn btn-primary" type="button">保存举报图片配置</button>
+            </div>
+
+            <div class="settings-card" id="appealImageSettingsCard" style="display:none;">
+              <div class="settings-card-head">
+                <span class="settings-card-icon settings-icon-img">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                </span>
+                <div>
+                  <div class="settings-card-title">申诉图片配置</div>
+                  <div class="settings-card-desc">控制用户申诉时证据图片的必填性与最大数量。上限 0 表示不限。</div>
+                </div>
+              </div>
+              <div class="form-field">
+                <label class="form-label"><input id="appealImageRequired" type="checkbox"> 证据图片必填</label>
+              </div>
+              <div class="form-field">
+                <label class="form-label" for="appealImageMax">最大数量（0=不限，最大 9）</label>
+                <input id="appealImageMax" class="form-input" type="number" min="0" max="9" value="3" style="width:120px;">
+              </div>
+              <button id="appealImageSaveBtn" class="btn btn-primary" type="button">保存申诉图片配置</button>
+            </div>
+
+            <div class="settings-card" id="cleanupCard" style="display:none;">
+              <div class="settings-card-head">
+                <span class="settings-card-icon settings-icon-trash">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                </span>
+                <div>
+                  <div class="settings-card-title">清理不可达文件</div>
+                  <div class="settings-card-desc">比对数据库引用的图片与磁盘存储的哈希文件，删除已无任何引用的孤儿文件。仅超级管理员可用。</div>
+                </div>
+              </div>
+              <div class="form-hint">回收站中的记录仍保留其关联申请，对应的图片不会被误删。</div>
+              <button id="cleanupBtn" class="btn btn-danger" type="button">清理不可达文件</button>
+              <div id="cleanupResult" class="form-hint" style="display:none;margin-top:10px;"></div>
             </div>
 
             <div class="settings-card">
@@ -306,6 +404,10 @@
           <div class="form-field">
             <label class="form-label">标记时间（留空为当前时间）</label>
             <input id="addBannedAt" class="form-input" type="datetime-local">
+          </div>
+          <div class="form-field" id="addImagesField" style="display:none;">
+            <label class="form-label">证据图片</label>
+            <div class="evidence-img-grid" id="addImagesGrid"></div>
           </div>
         </form>
       </div>
@@ -507,8 +609,8 @@
     <span class="toast-msg"></span>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+  <script src="/assets/vendor/marked.min.js"></script>
+  <script src="/assets/vendor/purify.min.js"></script>
   <script src="/assets/js/common.js"></script>
   <script src="/assets/js/admin.js"></script>
 </body>

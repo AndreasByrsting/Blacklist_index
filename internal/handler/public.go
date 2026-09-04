@@ -54,6 +54,7 @@ func (h *Handler) Check(w http.ResponseWriter, r *http.Request) {
 		"related_people":      rec.EventRelatedPeople,
 		"related_people_list": service.SplitRelatedPeople(rec.EventRelatedPeople),
 		"banned_at":           rec.BannedAt,
+		"images":              rec.Images,
 	})
 }
 
@@ -64,7 +65,21 @@ func (h *Handler) SiteConfig(w http.ResponseWriter, r *http.Request) {
 		h.writeError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"inbox_email": inbox})
+	report := h.setting.GetReportLinkConfig()
+	appeal := h.setting.GetAppealLinkConfig()
+	reportImg := h.setting.GetReportImageConfig()
+	appealImg := h.setting.GetAppealImageConfig()
+	writeJSON(w, http.StatusOK, map[string]any{
+		"inbox_email":              inbox,
+		"report_evidence_required": report.EvidenceRequired,
+		"report_link_domains":      report.Domains,
+		"appeal_evidence_required": appeal.EvidenceRequired,
+		"appeal_link_domains":      appeal.Domains,
+		"report_image_required":    reportImg.Required,
+		"report_image_max":         reportImg.MaxCount,
+		"appeal_image_required":    appealImg.Required,
+		"appeal_image_max":         appealImg.MaxCount,
+	})
 }
 
 // Announcement 公开公告查询。

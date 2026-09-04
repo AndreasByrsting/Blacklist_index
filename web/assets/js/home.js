@@ -12,6 +12,120 @@
     'sina.com', 'sohu.com', 'aliyun.com', 'yeah.net', '139.com', '189.cn'
   ];
 
+  // ===== Canvas 图片压缩 =====
+  // 将图片缩放到 maxDim 以内，输出 WebP (0.8 quality) 保证文字清晰且体积小。
+  async function compressImage(file, maxDim) {
+    maxDim = maxDim || 1600;
+    var bitmap = await createImageBitmap(file);
+    var scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+    var w = Math.round(bitmap.width * scale);
+    var h = Math.round(bitmap.height * scale);
+    var canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    bitmap.close && bitmap.close();
+    var blob = await new Promise(function (resolve) {
+      canvas.toBlob(resolve, 'image/webp', 0.8);
+    });
+    if (!blob) throw new Error('图片压缩失败');
+    return blob;
+  }
+
+  // ===== 图片选择器 =====
+  function initImagePicker(zoneId, inputId, gridId, hintId, imagesArr, config) {
+    var zone = $(zoneId);
+    var input = $(inputId);
+    var grid = $(gridId);
+    var hint = $(hintId);
+
+    function updateHint() {
+      var max = config.maxCount || 0;
+      var label = config.required ? '证据图片 <span class="required">*</span>' : '证据图片';
+      var labelText = config.required ? '证据图片 *' : '证据图片';
+      var labelEl = zone.parentElement.querySelector('.form-label');
+      if (labelEl) labelEl.innerHTML = label;
+      if (hint) {
+        var parts = [];
+        parts.push(config.required ? '必填' : '可选');
+        parts.push(max > 0 ? '最多 ' + max + ' 张' : '数量不限');
+        hint.textContent = parts.join('，');
+      }
+    }
+    updateHint();
+
+    zone.addEventListener('click', function () { input.click(); });
+
+    zone.addEventListener('dragover', function (e) {
+      e.preventDefault();
+      zone.classList.add('dragover');
+    });
+    zone.addEventListener('dragleave', function () { zone.classList.remove('dragover'); });
+    zone.addEventListener('drop', function (e) {
+      e.preventDefault();
+      zone.classList.remove('dragover');
+      handleFiles(e.dataTransfer.files);
+    });
+
+    input.addEventListener('change', function () {
+      handleFiles(input.files);
+      input.value = '';
+    });
+
+    async function handleFiles(fileList) {
+      var files = Array.prototype.slice.call(fileList).filter(function (f) {
+        return /^image\/(jpeg|png|webp)$/.test(f.type);
+      });
+      var max = config.maxCount || 0;
+      var remaining = max > 0 ? max - imagesArr.length : files.length;
+      if (remaining <= 0) { App.toast('warning', '已达到上传上限'); return; }
+      if (files.length > remaining) {
+        App.toast('warning', '最多上传 ' + max + ' 张，已添加前 ' + remaining + ' 张');
+        files = files.slice(0, remaining);
+      }
+
+      for (var i = 0; i < files.length; i++) {
+        try {
+          var blob = await compressImage(files[i]);
+          var previewUrl = URL.createObjectURL(blob);
+          imagesArr.push({ blob: blob, previewUrl: previewUrl, name: files[i].name });
+        } catch (e) {
+          App.toast('error', files[i].name + ' 压缩失败');
+        }
+      }
+      renderGrid();
+    }
+
+    function renderGrid() {
+      grid.innerHTML = imagesArr.map(function (item, idx) {
+        return '<div class="img-thumb">' +
+          '<img src="' + item.previewUrl + '" alt="预览">' +
+          '<button class="img-thumb-remove" type="button" data-idx="' + idx + '" title="删除">✕</button>' +
+          '</div>';
+      }).join('');
+
+      grid.querySelectorAll('.img-thumb-remove').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var idx = parseInt(btn.getAttribute('data-idx'), 10);
+          URL.revokeObjectURL(imagesArr[idx].previewUrl);
+          imagesArr.splice(idx, 1);
+          renderGrid();
+        });
+      });
+    }
+
+    function clearImages() {
+      imagesArr.forEach(function (item) { URL.revokeObjectURL(item.previewUrl); });
+      imagesArr.length = 0;
+      renderGrid();
+    }
+
+    return { clear: clearImages, updateConfig: function (c) { config = c; updateHint(); } };
+  }
+
+  var reportPicker, appealPicker;
+
   const emailInput = $('emailInput');
   const searchBtn = $('searchBtn');
   const resultArea = $('resultArea');
@@ -21,6 +135,12 @@
   let inboxEmail = '';
   let hasAnnouncement = false;
   let isAdminLoggedIn = false;
+  let reportLinkConfig = { evidenceRequired: true, domains: [] };
+  let appealLinkConfig = { evidenceRequired: true, domains: [] };
+  let reportImageConfig = { required: false, maxCount: 3 };
+  let appealImageConfig = { required: false, maxCount: 3 };
+  let reportImages = [];
+  let appealImages = [];
 
   const ICON_LOGIN = '<svg class="entry-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>';
   const ICON_BACK = '<svg class="entry-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>';
@@ -167,6 +287,17 @@
     }).join('') + '</div>';
   }
 
+  function evidenceImagesHTML(images) {
+    if (!Array.isArray(images) || !images.length) return '';
+    var thumbs = images.map(function (img) {
+      return '<button class="evidence-img" type="button" data-img-url="' + esc(img.url) + '">' +
+        '<img src="' + esc(img.url) + '" alt="证据图片" loading="lazy">' +
+        '</button>';
+    }).join('');
+    return '<div class="detail-row"><span class="detail-label">证据图片</span>' +
+      '<div class="detail-value"><div class="evidence-img-grid">' + thumbs + '</div></div></div>';
+  }
+
   function blockedState(d) {
     let detail = '';
     if (d.reason_html) {
@@ -181,6 +312,9 @@
           ? '<a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(url) + '</a>'
           : esc(url)) +
         '</div></div>';
+    }
+    if (Array.isArray(d.images) && d.images.length) {
+      detail += evidenceImagesHTML(d.images);
     }
     const chips = peopleChipsHTML(d);
     if (chips) {
@@ -231,6 +365,10 @@
   // ===== 提交 & 申诉 & 查询进度 =====
   $('submitBlWrap').style.display = ''; // 始终显示提交入口
 
+  // 初始化图片选择器
+  reportPicker = initImagePicker('reportUploadZone', 'reportImageInput', 'reportImgGrid', 'reportImageHint', reportImages, reportImageConfig);
+  appealPicker = initImagePicker('appealUploadZone', 'appealImageInput', 'appealImgGrid', 'appealImageHint', appealImages, appealImageConfig);
+
   // —— 弹窗通用 ——
   function openModal(id) { $(id).classList.add('show'); }
   function closeModal(id) { $(id).classList.remove('show'); }
@@ -276,6 +414,7 @@
     $('reportLink').value = '';
     $('reportPeople').value = '';
     $('reportReasonCount').textContent = '0';
+    reportPicker.clear();
     switchSubTab('report');
     openModal('submitModal');
   });
@@ -293,12 +432,17 @@
     if (!EMAIL_RE.test(email)) { App.toast('error', '请输入有效的邮箱地址'); return; }
     if (!reason) { App.toast('error', '请填写标记原因'); return; }
     if (App.countChars(reason) > 500) { App.toast('error', '标记原因过长，最多 500 字'); return; }
-    if (!link) { App.toast('error', '事件链接为必填项，请提供有效的证据链接'); return; }
-    var linkErr = App.validateLink(link);
-    if (linkErr) { App.toast('error', linkErr); return; }
+    if (reportLinkConfig.evidenceRequired && !link) { App.toast('error', '事件链接为必填项，请提供有效的证据链接'); return; }
+    if (link) {
+      var linkErr = App.validateLink(link, reportLinkConfig.domains);
+      if (linkErr) { App.toast('error', linkErr); return; }
+    }
+    if (reportImageConfig.required && reportImages.length === 0) {
+      App.toast('error', '请上传证据图片'); return;
+    }
 
     // 校验通过后进入 3 秒延时确认
-    startUserDelayConfirm({ email: email, reason: reason, link: link, people: people });
+    startUserDelayConfirm({ email: email, reason: reason, link: link, people: people, images: reportImages.slice() });
   });
 
   // ===== 用户提交的 3 秒延时确认 =====
@@ -342,11 +486,19 @@
   async function doSubmitReport(p) {
     App.setLoading($('reportSubmitBtn'), true, '提交中…');
     try {
-      var data = await App.api('/api/v1/submit/report', {
-        method: 'POST',
-        body: { email: p.email, ban_reason: p.reason, event_link: p.link, event_related_people: p.people }
-      });
+      var fd = new FormData();
+      fd.append('email', p.email);
+      fd.append('ban_reason', p.reason);
+      fd.append('event_link', p.link);
+      fd.append('event_related_people', p.people);
+      if (p.images) {
+        p.images.forEach(function (item, i) {
+          fd.append('images', item.blob, 'image_' + i + '.webp');
+        });
+      }
+      var data = await App.api('/api/v1/submit/report', { method: 'POST', body: fd });
       closeModal('submitModal');
+      reportPicker.clear();
       showSubmitSuccess(data.query_code);
     } catch (e) {
       App.toast('error', e.message);
@@ -361,6 +513,7 @@
     $('appealReason').value = '';
     $('appealEvidence').value = '';
     $('appealReasonCount').textContent = '0';
+    appealPicker.clear();
     switchSubTab('appeal');
     openModal('submitModal');
   }
@@ -394,17 +547,27 @@
     if (!EMAIL_RE.test(email)) { App.toast('error', '请输入有效的邮箱地址'); return; }
     if (!reason) { App.toast('error', '请填写申诉理由'); return; }
     if (App.countChars(reason) > 500) { App.toast('error', '申诉理由过长，最多 500 字'); return; }
-    if (!evidence) { App.toast('error', '反驳证据链接为必填项，请提供有效链接'); return; }
-    var linkErr = App.validateLink(evidence);
-    if (linkErr) { App.toast('error', linkErr); return; }
+    if (appealLinkConfig.evidenceRequired && !evidence) { App.toast('error', '反驳证据链接为必填项，请提供有效链接'); return; }
+    if (evidence) {
+      var linkErr = App.validateLink(evidence, appealLinkConfig.domains);
+      if (linkErr) { App.toast('error', linkErr); return; }
+    }
+    if (appealImageConfig.required && appealImages.length === 0) {
+      App.toast('error', '请上传证据图片'); return;
+    }
 
     App.setLoading($('appealSubmitBtn'), true, '提交中…');
     try {
-      var data = await App.api('/api/v1/submit/appeal', {
-        method: 'POST',
-        body: { email: email, appeal_reason: reason, appeal_evidence: evidence }
+      var fd = new FormData();
+      fd.append('email', email);
+      fd.append('appeal_reason', reason);
+      fd.append('appeal_evidence', evidence);
+      appealImages.forEach(function (item, i) {
+        fd.append('images', item.blob, 'image_' + i + '.webp');
       });
+      var data = await App.api('/api/v1/submit/appeal', { method: 'POST', body: fd });
       closeModal('submitModal');
+      appealPicker.clear();
       showSubmitSuccess(data.query_code);
     } catch (e) {
       App.toast('error', e.message);
@@ -488,11 +651,43 @@
     } catch (e) { /* 静默忽略公告加载失败 */ }
   })();
 
+  // ===== 必填星号与须知文案跟随配置开关 =====
+  function updateRequiredUI() {
+    var rStar = $('reportLinkStar');
+    if (rStar) rStar.style.display = reportLinkConfig.evidenceRequired ? '' : 'none';
+    var rNotice = $('reportLinkNotice');
+    if (rNotice) rNotice.textContent = reportLinkConfig.evidenceRequired ? '事件链接为必填项' : '事件链接为选填项';
+
+    var aStar = $('appealLinkStar');
+    if (aStar) aStar.style.display = appealLinkConfig.evidenceRequired ? '' : 'none';
+    var aNotice = $('appealLinkNotice');
+    if (aNotice) aNotice.textContent = appealLinkConfig.evidenceRequired ? '反驳证据链接（必填）' : '反驳证据链接（选填）';
+  }
+
   // ===== 联系管理员（收件箱配置后拉起本机邮件应用）=====
   (async function loadSiteConfig() {
     try {
       const data = await App.api('/api/v1/site-config');
       inboxEmail = data.inbox_email || '';
+      reportLinkConfig = {
+        evidenceRequired: data.report_evidence_required !== false,
+        domains: data.report_link_domains || []
+      };
+      appealLinkConfig = {
+        evidenceRequired: data.appeal_evidence_required !== false,
+        domains: data.appeal_link_domains || []
+      };
+      reportImageConfig = {
+        required: data.report_image_required === true,
+        maxCount: data.report_image_max || 3
+      };
+      appealImageConfig = {
+        required: data.appeal_image_required === true,
+        maxCount: data.appeal_image_max || 3
+      };
+      if (reportPicker) reportPicker.updateConfig(reportImageConfig);
+      if (appealPicker) appealPicker.updateConfig(appealImageConfig);
+      updateRequiredUI();
     } catch (e) { /* 静默忽略 */ }
     var btn = $('contactAdminBtn');
     if (btn && inboxEmail) {

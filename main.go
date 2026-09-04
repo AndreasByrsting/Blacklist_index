@@ -107,10 +107,11 @@ func main() {
 	announcementSvc := service.NewAnnouncementService(announcementRepo, cfg.Location)
 	settingSvc := service.NewSettingService(configRepo, auditSvc)
 	submissionRepo := repository.NewSubmissionRepo(database)
-	submissionSvc := service.NewSubmissionService(submissionRepo, blacklistSvc, auditSvc, cfg.Location)
+	imageSvc := service.NewImageService(cfg.DataDir)
+	submissionSvc := service.NewSubmissionService(submissionRepo, blacklistSvc, auditSvc, imageSvc, cfg.Location)
 
 	// Handler 与路由
-	h := handler.New(cfg, database, blacklistSvc, authSvc, announcementSvc, auditSvc, settingSvc, submissionSvc, jwtSecret)
+	h := handler.New(cfg, database, blacklistSvc, authSvc, announcementSvc, auditSvc, settingSvc, submissionSvc, imageSvc, jwtSecret)
 	assets, err := fs.Sub(webFS, "web")
 	if err != nil {
 		slog.Error("加载静态资源失败", "err", err)

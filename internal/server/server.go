@@ -34,6 +34,7 @@ func New(h *handler.Handler, dashboardPath, siteName string, assets fs.FS) http.
 	mux.HandleFunc("POST /api/v1/submit/report", h.SubmitReport)
 	mux.HandleFunc("POST /api/v1/submit/appeal", h.SubmitAppeal)
 	mux.HandleFunc("GET /api/v1/submission", h.QuerySubmission)
+	mux.HandleFunc("GET /api/v1/image/{file}", h.ServeImage)
 
 	// —— 需登录接口 ——
 	auth := func(next http.HandlerFunc) http.HandlerFunc {
@@ -42,6 +43,7 @@ func New(h *handler.Handler, dashboardPath, siteName string, assets fs.FS) http.
 	superAuth := func(next http.HandlerFunc) http.HandlerFunc {
 		return middleware.RequireSuper(h.JWTSecret(), next)
 	}
+	mux.HandleFunc("GET /api/v1/admin/image/{file}", auth(h.ServeImage))
 	mux.HandleFunc("POST /api/v1/admin/logout", auth(h.Logout))
 	mux.HandleFunc("GET /api/v1/admin/list", auth(h.ListBlacklist))
 	mux.HandleFunc("POST /api/v1/admin/add", auth(h.AddBlacklist))
@@ -58,6 +60,7 @@ func New(h *handler.Handler, dashboardPath, siteName string, assets fs.FS) http.
 	mux.HandleFunc("GET /api/v1/admin/submissions", auth(h.ListSubmissions))
 	mux.HandleFunc("POST /api/v1/admin/submissions/{id}/approve", auth(h.ApproveSubmission))
 	mux.HandleFunc("POST /api/v1/admin/submissions/{id}/reject", auth(h.RejectSubmission))
+	mux.HandleFunc("POST /api/v1/admin/cleanup-images", superAuth(h.CleanupImages))
 
 	// —— 超级管理员：用户管理 ——
 	mux.HandleFunc("GET /api/v1/admin/users", superAuth(h.ListAdmins))

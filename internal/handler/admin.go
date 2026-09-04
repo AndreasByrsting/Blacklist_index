@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -140,7 +141,7 @@ func (h *Handler) AddBlacklist(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &req) {
 		return
 	}
-	rec, err := h.blacklist.Add(req.Email, req.BanReason, req.EventLink, req.EventRelatedPeople, req.BannedAt, clientIP(r), r.UserAgent())
+	rec, err := h.blacklist.Add(req.Email, req.BanReason, req.EventLink, req.EventRelatedPeople, req.BannedAt, h.setting.GetReportLinkConfig().Domains, 0, clientIP(r), r.UserAgent())
 	if err != nil {
 		h.writeError(w, err)
 		return
@@ -158,7 +159,7 @@ func (h *Handler) UpdateBlacklist(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &req) {
 		return
 	}
-	rec, err := h.blacklist.Update(id, req.Email, req.BanReason, req.EventLink, req.EventRelatedPeople, req.BannedAt, clientIP(r), r.UserAgent())
+	rec, err := h.blacklist.Update(id, req.Email, req.BanReason, req.EventLink, req.EventRelatedPeople, req.BannedAt, h.setting.GetReportLinkConfig().Domains, clientIP(r), r.UserAgent())
 	if err != nil {
 		h.writeError(w, err)
 		return
@@ -203,6 +204,17 @@ func (h *Handler) PermanentDeleteBlacklist(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	writeSuccess(w, nil)
+}
+
+// CleanupImages 清理磁盘上不可达（无数据库引用）的图片文件（仅超级管理员）。
+func (h *Handler) CleanupImages(w http.ResponseWriter, r *http.Request) {
+	deleted, files, err := h.submission.CleanupOrphanedImages()
+	if err != nil {
+		h.writeError(w, err)
+		return
+	}
+	h.audit.Log(h.currentUser(r), service.ActionCleanupImages, fmt.Sprintf("删除 %d 个不可达文件", deleted), clientIP(r), r.UserAgent())
+	writeSuccess(w, map[string]any{"deleted": deleted, "files": files})
 }
 
 type announcementRequest struct {
@@ -269,29 +281,109 @@ func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	writeSuccess(w, nil)
 }
 
-type inboxRequest struct {
-	InboxEmail string `json:"inbox_email"`
+type settingsRequest struct {
+	InboxEmail              *string `json:"inbox_email,omitempty"`
+	ReportEvidenceRequired  *bool   `json:"report_evidence_required,omitempty"`
+	ReportLinkDomains       *string `json:"report_link_domains,omitempty"`
+	AppealEvidenceRequired  *bool   `json:"appeal_evidence_required,omitempty"`
+	AppealLinkDomains       *string `json:"appeal_link_domains,omitempty"`
+	ReportImageRequired     *bool   `json:"report_image_required,omitempty"`
+	ReportImageMax          *int    `json:"report_image_max,omitempty"`
+	AppealImageRequired     *bool   `json:"appeal_image_required,omitempty"`
+	AppealImageMax          *int    `json:"appeal_image_max,omitempty"`
 }
 
-// GetSettings 获取站点设置（收件箱等）。
+// GetSettings 获取站点设置（收件箱、证据链配置等）。
 func (h *Handler) GetSettings(w http.ResponseWriter, r *http.Request) {
 	inbox, err := h.setting.GetInbox()
 	if err != nil {
 		h.writeError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"inbox_email": inbox})
+	report := h.setting.GetReportLinkConfig()
+	appeal := h.setting.GetAppealLinkConfig()
+	reportImg := h.setting.GetReportImageConfig()
+	appealImg := h.setting.GetAppealImageConfig()
+	writeJSON(w, http.StatusOK, map[string]any{
+		"inbox_email":              inbox,
+		"report_evidence_required": report.EvidenceRequired,
+		"report_link_domains":      strings.Join(report.Domains, ", "),
+		"appeal_evidence_required": appeal.EvidenceRequired,
+		"appeal_link_domains":      strings.Join(appeal.Domains, ", "),
+		"report_image_required":   reportImg.Required,
+		"report_image_max":         reportImg.MaxCount,
+		"appeal_image_required":   appealImg.Required,
+		"appeal_image_max":         appealImg.MaxCount,
+	})
 }
 
-// SaveSettings 保存站点设置。
+// SaveSettings 保存站点设置（仅超级管理员）。
 func (h *Handler) SaveSettings(w http.ResponseWriter, r *http.Request) {
-	var req inboxRequest
+	var req settingsRequest
 	if !decodeJSON(w, r, &req) {
 		return
 	}
-	if err := h.setting.SetInbox(req.InboxEmail, clientIP(r), r.UserAgent()); err != nil {
-		h.writeError(w, err)
-		return
+	if req.InboxEmail != nil {
+		if err := h.setting.SetInbox(*req.InboxEmail, clientIP(r), r.UserAgent()); err != nil {
+			h.writeError(w, err)
+			return
+		}
+	}
+	if req.ReportEvidenceRequired != nil || req.ReportLinkDomains != nil {
+		required := false
+		domains := ""
+		if req.ReportEvidenceRequired != nil {
+			required = *req.ReportEvidenceRequired
+		}
+		if req.ReportLinkDomains != nil {
+			domains = *req.ReportLinkDomains
+		}
+		if err := h.setting.SetReportLinkConfig(required, domains, clientIP(r), r.UserAgent()); err != nil {
+			h.writeError(w, err)
+			return
+		}
+	}
+	if req.AppealEvidenceRequired != nil || req.AppealLinkDomains != nil {
+		required := false
+		domains := ""
+		if req.AppealEvidenceRequired != nil {
+			required = *req.AppealEvidenceRequired
+		}
+		if req.AppealLinkDomains != nil {
+			domains = *req.AppealLinkDomains
+		}
+		if err := h.setting.SetAppealLinkConfig(required, domains, clientIP(r), r.UserAgent()); err != nil {
+			h.writeError(w, err)
+			return
+		}
+	}
+	if req.ReportImageRequired != nil || req.ReportImageMax != nil {
+		required := false
+		maxCount := 3
+		if req.ReportImageRequired != nil {
+			required = *req.ReportImageRequired
+		}
+		if req.ReportImageMax != nil {
+			maxCount = *req.ReportImageMax
+		}
+		if err := h.setting.SetReportImageConfig(required, maxCount, clientIP(r), r.UserAgent()); err != nil {
+			h.writeError(w, err)
+			return
+		}
+	}
+	if req.AppealImageRequired != nil || req.AppealImageMax != nil {
+		required := false
+		maxCount := 3
+		if req.AppealImageRequired != nil {
+			required = *req.AppealImageRequired
+		}
+		if req.AppealImageMax != nil {
+			maxCount = *req.AppealImageMax
+		}
+		if err := h.setting.SetAppealImageConfig(required, maxCount, clientIP(r), r.UserAgent()); err != nil {
+			h.writeError(w, err)
+			return
+		}
 	}
 	writeSuccess(w, nil)
 }

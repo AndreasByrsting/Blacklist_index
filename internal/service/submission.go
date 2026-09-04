@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"strings"
+	"os"
 	"time"
 	"unicode/utf8"
 
@@ -23,17 +23,21 @@ var (
 	ErrReportReasonTooLong    = errors.New("标记原因过长，最多 500 字")
 	ErrAppealReasonTooLong    = errors.New("申诉理由过长，最多 500 字")
 	ErrRejectReasonTooLong    = errors.New("驳回原因过长，最多 500 字")
+	ErrImageRequired          = errors.New("请上传证据图片")
+	ErrImageTooMany           = errors.New("上传图片数量超出限制")
+	ErrImageTooLarge          = errors.New("单张图片大小不能超过 5MB")
 )
 
 type SubmissionService struct {
-	repo       *repository.SubmissionRepo
-	blacklist  *BlacklistService
-	audit      *AuditService
-	location   *time.Location
+	repo      *repository.SubmissionRepo
+	blacklist *BlacklistService
+	audit     *AuditService
+	images    *ImageService
+	location  *time.Location
 }
 
-func NewSubmissionService(repo *repository.SubmissionRepo, blacklist *BlacklistService, audit *AuditService, loc *time.Location) *SubmissionService {
-	return &SubmissionService{repo: repo, blacklist: blacklist, audit: audit, location: loc}
+func NewSubmissionService(repo *repository.SubmissionRepo, blacklist *BlacklistService, audit *AuditService, images *ImageService, loc *time.Location) *SubmissionService {
+	return &SubmissionService{repo: repo, blacklist: blacklist, audit: audit, images: images, location: loc}
 }
 
 // GenerateQueryCode 生成 12 位查询码（8 位随机十六进制 + 4 位时间戳后缀）。
@@ -44,7 +48,7 @@ func GenerateQueryCode() string {
 }
 
 // SubmitReport 提交举报（标记为不可信申请）。
-func (s *SubmissionService) SubmitReport(email, reason, link, relatedPeople, ip, ua string) (string, error) {
+func (s *SubmissionService) SubmitReport(email, reason, link, relatedPeople string, policy LinkPolicy, imgPolicy ImagePolicy, imageDatas [][]byte, ip, ua string) (string, error) {
 	email = NormalizeEmail(email)
 	if !ValidEmail(email) {
 		return "", ErrInvalidEmail
@@ -56,10 +60,17 @@ func (s *SubmissionService) SubmitReport(email, reason, link, relatedPeople, ip,
 		return "", ErrReportReasonTooLong
 	}
 	eventLink := NormalizeLink(link)
-	if eventLink == "" {
+	if policy.EvidenceRequired && eventLink == "" {
 		return "", ErrEventLinkRequired
 	}
-	if err := ValidateLink(eventLink); err != nil {
+	if eventLink != "" {
+		if err := ValidateLinkWithDomains(eventLink, policy.Domains); err != nil {
+			return "", err
+		}
+	}
+
+	images, err := s.processImages(imageDatas, imgPolicy)
+	if err != nil {
 		return "", err
 	}
 
@@ -77,14 +88,14 @@ func (s *SubmissionService) SubmitReport(email, reason, link, relatedPeople, ip,
 		SubmitterUA:        ua,
 		CreatedAt:          now,
 	}
-	if err := s.repo.Create(sub); err != nil {
+	if err := s.repo.Create(sub, images); err != nil {
 		return "", err
 	}
 	return code, nil
 }
 
 // SubmitAppeal 提交申诉。
-func (s *SubmissionService) SubmitAppeal(email, appealReason, appealEvidence, ip, ua string) (string, error) {
+func (s *SubmissionService) SubmitAppeal(email, appealReason, appealEvidence string, policy LinkPolicy, imgPolicy ImagePolicy, imageDatas [][]byte, ip, ua string) (string, error) {
 	email = NormalizeEmail(email)
 	if !ValidEmail(email) {
 		return "", ErrInvalidEmail
@@ -95,11 +106,18 @@ func (s *SubmissionService) SubmitAppeal(email, appealReason, appealEvidence, ip
 	if utf8.RuneCountInString(appealReason) > MaxAppealReasonLen {
 		return "", ErrAppealReasonTooLong
 	}
-	if strings.TrimSpace(appealEvidence) == "" {
+	evidence := NormalizeLink(appealEvidence)
+	if policy.EvidenceRequired && evidence == "" {
 		return "", ErrAppealEvidenceRequired
 	}
-	evidence := NormalizeLink(appealEvidence)
-	if err := ValidateLink(evidence); err != nil {
+	if evidence != "" {
+		if err := ValidateLinkWithDomains(evidence, policy.Domains); err != nil {
+			return "", err
+		}
+	}
+
+	images, err := s.processImages(imageDatas, imgPolicy)
+	if err != nil {
 		return "", err
 	}
 
@@ -116,10 +134,69 @@ func (s *SubmissionService) SubmitAppeal(email, appealReason, appealEvidence, ip
 		SubmitterUA:    ua,
 		CreatedAt:      now,
 	}
-	if err := s.repo.Create(sub); err != nil {
+	if err := s.repo.Create(sub, images); err != nil {
 		return "", err
 	}
 	return code, nil
+}
+
+// processImages 校验并落盘证据图片，返回待关联的图片元数据。
+func (s *SubmissionService) processImages(datas [][]byte, policy ImagePolicy) ([]*model.SubmissionImage, error) {
+	if policy.Required && len(datas) == 0 {
+		return nil, ErrImageRequired
+	}
+	if policy.MaxCount > 0 && len(datas) > policy.MaxCount {
+		return nil, ErrImageTooMany
+	}
+
+	images := make([]*model.SubmissionImage, 0, len(datas))
+	for i, data := range datas {
+		if len(data) == 0 {
+			continue
+		}
+		if len(data) > MaxImageSize {
+			return nil, ErrImageTooLarge
+		}
+		hash, ext, err := s.images.Save(data)
+		if err != nil {
+			return nil, err
+		}
+		images = append(images, &model.SubmissionImage{
+			FileHash:  hash,
+			Ext:       ext,
+			Size:      int64(len(data)),
+			SortOrder: i,
+		})
+	}
+	return images, nil
+}
+
+// CleanupOrphanedImages 删除磁盘上不可达（无有效引用）的图片文件。
+// 「可达」指图片属于待审核申请，或仍属于黑名单（含回收站）记录；黑名单被彻底删除或申请
+// 已驳回后，其图片才视为不可达而被删除。返回删除的文件数与文件名（file_hash.ext）。
+func (s *SubmissionService) CleanupOrphanedImages() (int, []string, error) {
+	referenced, err := s.repo.ListReferencedImages()
+	if err != nil {
+		return 0, nil, err
+	}
+	files, err := s.images.ListStoredImages()
+	if err != nil {
+		return 0, nil, err
+	}
+
+	deleted := 0
+	names := make([]string, 0)
+	for _, f := range files {
+		if referenced[f.Hash+"."+f.Ext] {
+			continue
+		}
+		if err := os.Remove(f.Path); err != nil {
+			return deleted, names, err
+		}
+		deleted++
+		names = append(names, f.Hash+"."+f.Ext)
+	}
+	return deleted, names, nil
 }
 
 // GetByQueryCode 根据查询码获取申请详情。
@@ -149,8 +226,24 @@ func (s *SubmissionService) List(status string, typ string, page int, pageSize i
 	}
 	for _, sub := range list {
 		s.normalizeTimes(sub)
+		if err := s.attachImages(sub); err != nil {
+			return nil, 0, err
+		}
 	}
 	return list, total, nil
+}
+
+// attachImages 关联图片元数据并拼接后台可加载的 URL。
+func (s *SubmissionService) attachImages(sub *model.Submission) error {
+	images, err := s.repo.ListImages(sub.ID)
+	if err != nil {
+		return err
+	}
+	for _, img := range images {
+		img.URL = "/api/v1/admin/image/" + img.FileHash + "." + img.Ext
+	}
+	sub.Images = images
+	return nil
 }
 
 // normalizeTimes 统一提交时间/审核时间为目标格式，兼容历史带 Z 后缀的数据。
@@ -160,7 +253,7 @@ func (s *SubmissionService) normalizeTimes(sub *model.Submission) {
 }
 
 // Approve 通过申请（举报通过则加入黑名单；申诉通过则从黑名单移除）。
-func (s *SubmissionService) Approve(id int64, reviewer, ip, ua string) (*model.Submission, error) {
+func (s *SubmissionService) Approve(id int64, reviewer string, domains []string, ip, ua string) (*model.Submission, error) {
 	sub, err := s.repo.GetByID(id)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
@@ -176,7 +269,7 @@ func (s *SubmissionService) Approve(id int64, reviewer, ip, ua string) (*model.S
 	now := NowStr(s.location)
 	if sub.Type == model.TypeReport {
 		// 举报通过 → 加入黑名单（以审核通过时间作为标记时间）
-		_, err := s.blacklist.Add(sub.Email, sub.BanReason, sub.EventLink, sub.EventRelatedPeople, now, ip, ua)
+		_, err := s.blacklist.Add(sub.Email, sub.BanReason, sub.EventLink, sub.EventRelatedPeople, now, domains, sub.ID, ip, ua)
 		if err != nil {
 			return nil, err
 		}

@@ -23,7 +23,8 @@
     reset_totp: '重置TOTP密钥',
     delete_admin: '删除管理员',
     approve_submission: '通过申请',
-    reject_submission: '驳回申请'
+    reject_submission: '驳回申请',
+    cleanup_images: '清理不可达文件'
   };
   const ACTION_TAGS = {
     login: 'tag-login',
@@ -40,7 +41,8 @@
     reset_totp: 'tag-login',
     delete_admin: 'tag-delete',
     approve_submission: 'tag-login',
-    reject_submission: 'tag-delete'
+    reject_submission: 'tag-delete',
+    cleanup_images: 'tag-delete'
   };
 
   const state = {
@@ -100,8 +102,13 @@
 
   // ===== 更新管理员相关 UI（显示/隐藏用户管理 Tab、收件箱配置、显示用户名） =====
   function updateAdminUI() {
-    $('usersTab').style.display = state.isSuper ? '' : 'none';
-    $('inboxSettingsCard').style.display = state.isSuper ? '' : 'none';
+            $('usersTab').style.display = state.isSuper ? '' : 'none';
+            $('inboxSettingsCard').style.display = state.isSuper ? '' : 'none';
+            $('reportLinkSettingsCard').style.display = state.isSuper ? '' : 'none';
+            $('appealLinkSettingsCard').style.display = state.isSuper ? '' : 'none';
+            $('reportImageSettingsCard').style.display = state.isSuper ? '' : 'none';
+            $('appealImageSettingsCard').style.display = state.isSuper ? '' : 'none';
+            $('cleanupCard').style.display = state.isSuper ? '' : 'none';
     const adminNameEl = document.querySelector('.admin-user');
     if (adminNameEl) {
       adminNameEl.innerHTML = '<span class="admin-user-dot"></span>' + esc(state.currentUser || 'admin') +
@@ -197,6 +204,8 @@
   $('addBtn').addEventListener('click', function () {
     state.editing = null;
     $('addForm').reset();
+    $('addImagesField').style.display = 'none';
+    $('addImagesGrid').innerHTML = '';
     updateReasonCount();
     $('addModalTitle').textContent = '添加不可信邮箱';
     $('addNextBtn').textContent = '下一步';
@@ -291,6 +300,23 @@
     return s.replace(' ', 'T').slice(0, 16);
   }
 
+  function renderEditImages(images) {
+    var field = $('addImagesField');
+    var grid = $('addImagesGrid');
+    if (!field || !grid) return;
+    if (!Array.isArray(images) || !images.length) {
+      field.style.display = 'none';
+      grid.innerHTML = '';
+      return;
+    }
+    field.style.display = '';
+    grid.innerHTML = images.map(function (img) {
+      return '<button class="evidence-img" type="button" data-img-url="' + esc(img.url) + '">' +
+        '<img src="' + esc(img.url) + '" alt="证据图片" loading="lazy">' +
+        '</button>';
+    }).join('');
+  }
+
   function openEdit(id) {
     const item = findItemById(id);
     if (!item) { App.toast('error', '未找到该记录，请刷新列表'); return; }
@@ -300,6 +326,7 @@
     $('addLink').value = item.event_link || '';
     $('addPeople').value = item.event_related_people || '';
     $('addBannedAt').value = toDatetimeLocal(item.banned_at);
+    renderEditImages(item.images);
     updateReasonCount();
     $('addModalTitle').textContent = '编辑不可信邮箱';
     $('addNextBtn').textContent = '保存修改';
@@ -386,11 +413,21 @@
     var rejectNote = (s.status === 'rejected' && s.reject_reason)
       ? '<div class="li-field"><span class="li-label">驳回原因</span><span class="li-value" style="color:var(--danger);">' + esc(s.reject_reason) + '</span></div>'
       : '';
+    var imageNote = '';
+    if (s.images && s.images.length > 0) {
+      var thumbs = s.images.map(function (img) {
+        return '<button class="rd-img-thumb" type="button" data-img-url="' + esc(img.url) + '">' +
+          '<img src="' + esc(img.url) + '" alt="证据图片" loading="lazy">' +
+          '</button>';
+      }).join('');
+      imageNote = '<div class="li-field"><span class="li-label">证据图片</span><div class="li-value"><div class="rd-img-grid">' + thumbs + '</div></div></div>';
+    }
     return '<div class="list-item">' +
       '<div class="li-field"><span class="li-label">类型</span><span class="li-value">' + m.typeTag + ' <span class="' + m.statusClass + '">' + m.statusText + '</span></span></div>' +
       '<div class="li-field"><span class="li-label">邮箱</span><span class="li-value">' + esc(s.email) + '</span></div>' +
       '<div class="li-field"><span class="li-label">原因/理由</span><span class="li-value">' + esc(m.reason || '—') + '</span></div>' +
       '<div class="li-field"><span class="li-label">证据链接</span><span class="li-value">' + escapeLink(m.evidence) + '</span></div>' +
+      imageNote +
       rejectNote +
       '<div class="li-field"><span class="li-label">提交时间</span><span class="li-value">' + esc(s.created_at || '—') + '</span></div>' +
       '<div class="li-actions">' + reviewActionButtons(s, m.canReview) + '</div>' +
@@ -422,6 +459,14 @@
     rows += '<div class="rd-item rd-item-full"><div class="rd-label">证据链接</div><div class="rd-value">' + escapeLink(evidence) + '</div></div>';
     if (people) {
       rows += '<div class="rd-item rd-item-full"><div class="rd-label">相关人员</div><div class="rd-value">' + esc(people) + '</div></div>';
+    }
+    if (s.images && s.images.length > 0) {
+      var thumbs = s.images.map(function (img) {
+        return '<button class="rd-img-thumb" type="button" data-img-url="' + esc(img.url) + '">' +
+          '<img src="' + esc(img.url) + '" alt="证据图片" loading="lazy">' +
+          '</button>';
+      }).join('');
+      rows += '<div class="rd-item rd-item-full"><div class="rd-label">证据图片</div><div class="rd-value"><div class="rd-img-grid">' + thumbs + '</div></div></div>';
     }
     if (s.status === 'rejected' && s.reject_reason) {
       rows += '<div class="rd-item rd-item-full rd-item-reject"><div class="rd-label">驳回原因</div><div class="rd-value">' + esc(s.reject_reason) + '</div></div>';
@@ -505,6 +550,8 @@
     if (action === 'approve') approveSubmission(id);
     else if (action === 'reject') openRejectModal(id);
   });
+
+  // 图片 Lightbox（点击 data-img-url 放大预览）已在 common.js 中统一处理。
 
   async function approveSubmission(id) {
     if (!confirm('确定通过该申请吗？举报通过将加入不可信邮箱列表，申诉通过将从列表中移除。')) return;
@@ -764,6 +811,14 @@
     try {
       const data = await adminApi('/api/v1/admin/settings');
       $('inboxEmail').value = data.inbox_email || '';
+      $('reportEvidenceRequired').checked = data.report_evidence_required !== false;
+      $('reportLinkDomains').value = data.report_link_domains || '';
+      $('appealEvidenceRequired').checked = data.appeal_evidence_required !== false;
+      $('appealLinkDomains').value = data.appeal_link_domains || '';
+      $('reportImageRequired').checked = data.report_image_required === true;
+      $('reportImageMax').value = data.report_image_max != null ? data.report_image_max : 3;
+      $('appealImageRequired').checked = data.appeal_image_required === true;
+      $('appealImageMax').value = data.appeal_image_max != null ? data.appeal_image_max : 3;
     } catch (e) { /* adminApi 已处理 */ }
   }
 
@@ -779,6 +834,95 @@
       App.toast('error', err.message);
     } finally {
       App.setLoading($('inboxSaveBtn'), false);
+    }
+  });
+
+  // ===== 系统设置：举报证据链 =====
+  $('reportLinkSaveBtn').addEventListener('click', async function () {
+    const required = $('reportEvidenceRequired').checked;
+    const domains = $('reportLinkDomains').value.trim();
+    App.setLoading($('reportLinkSaveBtn'), true, '保存中…');
+    try {
+      await adminApi('/api/v1/admin/settings', { method: 'PUT', body: {
+        report_evidence_required: required, report_link_domains: domains
+      }});
+      await loadSettings();
+      App.toast('success', '举报证据链配置已保存');
+    } catch (err) {
+      App.toast('error', err.message);
+    } finally {
+      App.setLoading($('reportLinkSaveBtn'), false);
+    }
+  });
+
+  // ===== 系统设置：申诉证据链 =====
+  $('appealLinkSaveBtn').addEventListener('click', async function () {
+    const required = $('appealEvidenceRequired').checked;
+    const domains = $('appealLinkDomains').value.trim();
+    App.setLoading($('appealLinkSaveBtn'), true, '保存中…');
+    try {
+      await adminApi('/api/v1/admin/settings', { method: 'PUT', body: {
+        appeal_evidence_required: required, appeal_link_domains: domains
+      }});
+      await loadSettings();
+      App.toast('success', '申诉证据链配置已保存');
+    } catch (err) {
+      App.toast('error', err.message);
+    } finally {
+      App.setLoading($('appealLinkSaveBtn'), false);
+    }
+  });
+
+  // ===== 系统设置：举报图片配置 =====
+  $('reportImageSaveBtn').addEventListener('click', async function () {
+    const required = $('reportImageRequired').checked;
+    const maxCount = parseInt($('reportImageMax').value, 10) || 0;
+    App.setLoading($('reportImageSaveBtn'), true, '保存中…');
+    try {
+      await adminApi('/api/v1/admin/settings', { method: 'PUT', body: {
+        report_image_required: required, report_image_max: maxCount
+      }});
+      await loadSettings();
+      App.toast('success', '举报图片配置已保存');
+    } catch (err) {
+      App.toast('error', err.message);
+    } finally {
+      App.setLoading($('reportImageSaveBtn'), false);
+    }
+  });
+
+  // ===== 系统设置：申诉图片配置 =====
+  $('appealImageSaveBtn').addEventListener('click', async function () {
+    const required = $('appealImageRequired').checked;
+    const maxCount = parseInt($('appealImageMax').value, 10) || 0;
+    App.setLoading($('appealImageSaveBtn'), true, '保存中…');
+    try {
+      await adminApi('/api/v1/admin/settings', { method: 'PUT', body: {
+        appeal_image_required: required, appeal_image_max: maxCount
+      }});
+      await loadSettings();
+      App.toast('success', '申诉图片配置已保存');
+    } catch (err) {
+      App.toast('error', err.message);
+    } finally {
+      App.setLoading($('appealImageSaveBtn'), false);
+    }
+  });
+
+  // ===== 系统设置：清理不可达文件（仅超管） =====
+  $('cleanupBtn').addEventListener('click', async function () {
+    if (!confirm('确定要清理不可达文件吗？\n系统将比对数据库引用的图片与磁盘哈希文件，删除无任何引用的孤儿文件，此操作不可恢复。')) return;
+    App.setLoading($('cleanupBtn'), true, '清理中…');
+    try {
+      const data = await adminApi('/api/v1/admin/cleanup-images', { method: 'POST' });
+      const n = data.deleted || 0;
+      $('cleanupResult').style.display = '';
+      $('cleanupResult').textContent = '清理完成，共删除 ' + n + ' 个不可达文件';
+      App.toast('success', '已清理 ' + n + ' 个不可达文件');
+    } catch (err) {
+      App.toast('error', '清理失败：' + err.message);
+    } finally {
+      App.setLoading($('cleanupBtn'), false);
     }
   });
 

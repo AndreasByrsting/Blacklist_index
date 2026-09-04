@@ -23,7 +23,8 @@ func NewBlacklistRepo(db *sql.DB) *BlacklistRepo { return &BlacklistRepo{db: db}
 func (r *BlacklistRepo) Check(email string) (*model.Blacklist, error) {
 	row := r.db.QueryRow(`
 		SELECT id, email, ban_reason, ban_reason_raw, event_link, event_related_people,
-		       COALESCE(banned_at,''), created_by, COALESCE(created_at,''), COALESCE(deleted_at,'')
+		       COALESCE(banned_at,''), created_by, COALESCE(created_at,''), COALESCE(deleted_at,''),
+		       COALESCE(submission_id,0)
 		FROM blacklist WHERE email = ? AND deleted_at IS NULL`, email)
 	b, err := scanBlacklist(row)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -59,7 +60,8 @@ func (r *BlacklistRepo) HasSimilarAccount(email string) (bool, error) {
 func (r *BlacklistRepo) GetByID(id int64) (*model.Blacklist, error) {
 	row := r.db.QueryRow(`
 		SELECT id, email, ban_reason, ban_reason_raw, event_link, event_related_people,
-		       COALESCE(banned_at,''), created_by, COALESCE(created_at,''), COALESCE(deleted_at,'')
+		       COALESCE(banned_at,''), created_by, COALESCE(created_at,''), COALESCE(deleted_at,''),
+		       COALESCE(submission_id,0)
 		FROM blacklist WHERE id = ?`, id)
 	b, err := scanBlacklist(row)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -72,9 +74,9 @@ func (r *BlacklistRepo) GetByID(id int64) (*model.Blacklist, error) {
 func (r *BlacklistRepo) Create(b *model.Blacklist) error {
 	b.Email = strings.ToLower(strings.TrimSpace(b.Email))
 	_, err := r.db.Exec(`
-		INSERT INTO blacklist (email, ban_reason, ban_reason_raw, event_link, event_related_people, banned_at, created_by, created_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-		b.Email, b.BanReason, b.BanReasonRaw, b.EventLink, b.EventRelatedPeople, b.BannedAt, b.CreatedBy, b.CreatedAt)
+		INSERT INTO blacklist (email, ban_reason, ban_reason_raw, event_link, event_related_people, banned_at, created_by, created_at, submission_id)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		b.Email, b.BanReason, b.BanReasonRaw, b.EventLink, b.EventRelatedPeople, b.BannedAt, b.CreatedBy, b.CreatedAt, b.SubmissionID)
 	return err
 }
 
@@ -98,9 +100,9 @@ func (r *BlacklistRepo) Update(id int64, b *model.Blacklist) error {
 	b.Email = strings.ToLower(strings.TrimSpace(b.Email))
 	res, err := r.db.Exec(`
 		UPDATE blacklist
-		SET email = ?, ban_reason = ?, ban_reason_raw = ?, event_link = ?, event_related_people = ?, banned_at = ?
+		SET email = ?, ban_reason = ?, ban_reason_raw = ?, event_link = ?, event_related_people = ?, banned_at = ?, submission_id = ?
 		WHERE id = ? AND deleted_at IS NULL`,
-		b.Email, b.BanReason, b.BanReasonRaw, b.EventLink, b.EventRelatedPeople, b.BannedAt, id)
+		b.Email, b.BanReason, b.BanReasonRaw, b.EventLink, b.EventRelatedPeople, b.BannedAt, b.SubmissionID, id)
 	return checkAffected(res, err)
 }
 
@@ -126,9 +128,10 @@ func (r *BlacklistRepo) List(query string, offset, limit int, deleted bool) ([]*
 	}
 
 	rows, err := r.db.Query(`
-		SELECT id, email, ban_reason, ban_reason_raw, event_link, event_related_people,
-		       COALESCE(banned_at,''), created_by, COALESCE(created_at,''), COALESCE(deleted_at,'')
-		FROM blacklist `+cond+` ORDER BY id DESC LIMIT ? OFFSET ?`, append(args, limit, offset)...)
+			SELECT id, email, ban_reason, ban_reason_raw, event_link, event_related_people,
+			       COALESCE(banned_at,''), created_by, COALESCE(created_at,''), COALESCE(deleted_at,''),
+			       COALESCE(submission_id,0)
+			FROM blacklist `+cond+` ORDER BY id DESC LIMIT ? OFFSET ?`, append(args, limit, offset)...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("查询失败: %w", err)
 	}
@@ -163,6 +166,31 @@ func (r *BlacklistRepo) PermanentDelete(id int64) error {
 	return checkAffected(res, err)
 }
 
+// ListImages 查询某举报申请（submission）关联的证据图片元数据，供黑名单记录展示。
+func (r *BlacklistRepo) ListImages(submissionID int64) ([]*model.SubmissionImage, error) {
+	list := make([]*model.SubmissionImage, 0)
+	if submissionID <= 0 {
+		return list, nil
+	}
+	rows, err := r.db.Query(`
+		SELECT id, submission_id, file_hash, ext, size, sort_order
+		FROM submission_images
+		WHERE submission_id = ?
+		ORDER BY sort_order ASC, id ASC`, submissionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var img model.SubmissionImage
+		if err := rows.Scan(&img.ID, &img.SubmissionID, &img.FileHash, &img.Ext, &img.Size, &img.SortOrder); err != nil {
+			return nil, err
+		}
+		list = append(list, &img)
+	}
+	return list, rows.Err()
+}
+
 type scanner interface {
 	Scan(dest ...any) error
 }
@@ -171,7 +199,7 @@ func scanBlacklist(s scanner) (*model.Blacklist, error) {
 	var b model.Blacklist
 	var deletedAt string
 	if err := s.Scan(&b.ID, &b.Email, &b.BanReason, &b.BanReasonRaw, &b.EventLink,
-		&b.EventRelatedPeople, &b.BannedAt, &b.CreatedBy, &b.CreatedAt, &deletedAt); err != nil {
+		&b.EventRelatedPeople, &b.BannedAt, &b.CreatedBy, &b.CreatedAt, &deletedAt, &b.SubmissionID); err != nil {
 		return nil, err
 	}
 	if deletedAt != "" {

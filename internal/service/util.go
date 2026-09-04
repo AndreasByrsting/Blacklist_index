@@ -25,7 +25,7 @@ var (
 	// ErrLinkHTTPSRequired 表示链接必须使用 HTTPS。
 	ErrLinkHTTPSRequired = errors.New("链接必须使用 HTTPS 协议")
 	// ErrLinkDomainUnsupported 表示链接域名不在白名单内。
-	ErrLinkDomainUnsupported = errors.New("为了用户安全暂不支持该网站，仅支持 tieba.baidu.com，后续将逐步适配")
+	ErrLinkDomainUnsupported = errors.New("为了用户安全暂不支持该网站")
 )
 
 // NormalizeEmail 统一转小写并去除首尾空白。
@@ -51,9 +51,10 @@ func NormalizeLink(s string) string {
 	return "https://" + s
 }
 
-// ValidateLink 校验链接（需先经 NormalizeLink 规范化，保证已带协议）。
-// 要求使用 HTTPS，且域名必须为 tieba.baidu.com（含其子域名），其余站点拒绝以保障用户安全。
-func ValidateLink(s string) error {
+// ValidateLinkWithDomains 校验链接（需先经 NormalizeLink 规范化）。
+// 要求使用 HTTPS；domains 非空时还要求域名命中白名单（含子域名）。
+// domains 为空表示不限制域名。
+func ValidateLinkWithDomains(s string, domains []string) error {
 	s = strings.TrimSpace(s)
 	if s == "" {
 		return nil
@@ -65,9 +66,18 @@ func ValidateLink(s string) error {
 	if !strings.EqualFold(u.Scheme, "https") {
 		return ErrLinkHTTPSRequired
 	}
-	host := strings.ToLower(u.Hostname())
-	if host != "tieba.baidu.com" && !strings.HasSuffix(host, ".tieba.baidu.com") {
-		return ErrLinkDomainUnsupported
+	if len(domains) > 0 {
+		host := strings.ToLower(u.Hostname())
+		allowed := false
+		for _, d := range domains {
+			if host == d || strings.HasSuffix(host, "."+d) {
+				allowed = true
+				break
+			}
+		}
+		if !allowed {
+			return fmt.Errorf("%w，仅支持 %s", ErrLinkDomainUnsupported, strings.Join(domains, "、"))
+		}
 	}
 	return nil
 }

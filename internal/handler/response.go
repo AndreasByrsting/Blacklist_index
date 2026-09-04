@@ -90,7 +90,15 @@ func (h *Handler) writeError(w http.ResponseWriter, err error) {
 	case errors.Is(err, service.ErrLinkHTTPSRequired):
 		status, msg = http.StatusBadRequest, "链接必须使用 HTTPS 协议"
 	case errors.Is(err, service.ErrLinkDomainUnsupported):
-		status, msg = http.StatusBadRequest, "为了用户安全暂不支持该网站，仅支持 tieba.baidu.com，后续将逐步适配"
+		status, msg = http.StatusBadRequest, err.Error()
+	case errors.Is(err, service.ErrImageRequired):
+		status, msg = http.StatusBadRequest, err.Error()
+	case errors.Is(err, service.ErrImageTooMany):
+		status, msg = http.StatusBadRequest, err.Error()
+	case errors.Is(err, service.ErrImageTooLarge):
+		status, msg = http.StatusBadRequest, err.Error()
+	case errors.Is(err, service.ErrImageTypeInvalid):
+		status, msg = http.StatusBadRequest, err.Error()
 	case errors.Is(err, repository.ErrNotFound):
 		status, msg = http.StatusNotFound, "记录不存在"
 	default:
