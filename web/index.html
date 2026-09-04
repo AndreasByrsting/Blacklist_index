@@ -158,7 +158,7 @@
             <div class="report-notice-text">
               <div class="report-notice-title">提交须知</div>
               <div class="report-notice-desc">
-                请确保举报内容真实合理，<strong id="reportLinkNotice">事件链接为必填项</strong>（需提供贴吧的公开链接作为证据）。提交后将生成查询码，可用于跟踪审核进度。
+                请确保举报内容真实合理，<strong id="reportLinkNotice">事件链接为必填项</strong>。提交后将生成查询码，可用于跟踪审核进度。
               </div>
             </div>
           </div>
@@ -175,9 +175,10 @@
               <div class="form-hint form-hint-right"><span id="reportReasonCount">0</span>/500</div>
             </div>
             <div class="form-field">
-              <label class="form-label" for="reportLink">事件链接 <span class="required" id="reportLinkStar">*</span></label>
-              <input id="reportLink" class="form-input" type="text" placeholder="https://tieba.baidu.com/p/...">
-              <div class="form-hint">需提供贴吧的公开链接，为保证用户安全暂仅支持贴吧链接</div>
+              <label class="form-label" for="reportLink">事件链接 <span class="required"
+                  id="reportLinkStar">*</span></label>
+              <input id="reportLink" class="form-input" type="text" placeholder="https://...">
+              <div class="form-hint">需提供可访问的公开链接</div>
             </div>
             <div class="form-field">
               <label class="form-label" for="reportPeople">相关人员</label>
@@ -186,9 +187,11 @@
             <div class="form-field" id="reportImageField">
               <label class="form-label" id="reportImageLabel">证据图片</label>
               <div class="upload-zone" id="reportUploadZone">
-                <input id="reportImageInput" type="file" accept="image/jpeg,image/png,image/webp" multiple style="display:none;">
+                <input id="reportImageInput" type="file" accept="image/jpeg,image/png,image/webp" multiple
+                  style="display:none;">
                 <div class="upload-zone-inner">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="17 8 12 3 7 8"></polyline>
                     <line x1="12" y1="3" x2="12" y2="15"></line>
@@ -212,7 +215,7 @@
             <div class="report-notice-text">
               <div class="report-notice-title">申诉须知</div>
               <div class="report-notice-desc">
-                如您认为邮箱被误标记，请填写申诉理由并提供<strong id="appealLinkNotice">反驳证据链接（必填）</strong>（需贴吧的公开链接）。
+                如您认为邮箱被误标记，请填写申诉理由并提供<strong id="appealLinkNotice">反驳证据链接（必填）</strong>。
                 管理员审核通过后将解除标记。提交后将生成查询码，可用于跟踪审核进度。
               </div>
             </div>
@@ -230,15 +233,18 @@
               <div class="form-hint form-hint-right"><span id="appealReasonCount">0</span>/500</div>
             </div>
             <div class="form-field">
-              <label class="form-label" for="appealEvidence">反驳证据链接 <span class="required" id="appealLinkStar">*</span></label>
+              <label class="form-label" for="appealEvidence">反驳证据链接 <span class="required"
+                  id="appealLinkStar">*</span></label>
               <input id="appealEvidence" class="form-input" type="text" placeholder="需提供合理理由的公开帖子链接">
             </div>
             <div class="form-field" id="appealImageField">
               <label class="form-label" id="appealImageLabel">证据图片</label>
               <div class="upload-zone" id="appealUploadZone">
-                <input id="appealImageInput" type="file" accept="image/jpeg,image/png,image/webp" multiple style="display:none;">
+                <input id="appealImageInput" type="file" accept="image/jpeg,image/png,image/webp" multiple
+                  style="display:none;">
                 <div class="upload-zone-inner">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="17 8 12 3 7 8"></polyline>
                     <line x1="12" y1="3" x2="12" y2="15"></line>

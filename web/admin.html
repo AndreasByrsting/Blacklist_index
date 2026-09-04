@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{SITE_NAME}} · 管理后台</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234F6EF7'%3E%3Cpath d='M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z'/%3E%3C/svg%3E">
+  <link rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234F6EF7'%3E%3Cpath d='M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="/assets/css/style.css">
 </head>
+
 <body>
   <!-- 登录视图 -->
   <div id="loginView" class="auth-section" style="display:none;">
@@ -16,15 +19,18 @@
       <form id="loginForm">
         <div class="form-field">
           <label class="form-label" for="loginUsername">用户名</label>
-          <input id="loginUsername" class="form-input" type="text" placeholder="请输入用户名" autocomplete="username" spellcheck="false">
+          <input id="loginUsername" class="form-input" type="text" placeholder="请输入用户名" autocomplete="username"
+            spellcheck="false">
         </div>
         <div class="form-field">
           <label class="form-label" for="loginPassword">密码</label>
-          <input id="loginPassword" class="form-input" type="password" placeholder="请输入管理员密码" autocomplete="current-password">
+          <input id="loginPassword" class="form-input" type="password" placeholder="请输入管理员密码"
+            autocomplete="current-password">
         </div>
         <div class="form-field">
           <label class="form-label" for="loginTotp">动态口令</label>
-          <input id="loginTotp" class="form-input" type="text" inputmode="numeric" maxlength="6" placeholder="6 位动态口令" autocomplete="one-time-code">
+          <input id="loginTotp" class="form-input" type="text" inputmode="numeric" maxlength="6" placeholder="6 位动态口令"
+            autocomplete="one-time-code">
         </div>
         <div id="loginError" class="form-error"></div>
         <button id="loginBtn" class="btn btn-primary btn-block" type="submit">登录</button>
@@ -37,7 +43,9 @@
     <header class="admin-topbar">
       <div class="container admin-topbar-inner">
         <div class="admin-topbar-left">
-          <span class="brand-icon"><svg viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z"/></svg></span>
+          <span class="brand-icon"><svg viewBox="0 0 24 24">
+              <path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z" />
+            </svg></span>
           <span class="admin-title">{{SITE_NAME}} · 管理后台</span>
         </div>
         <div class="admin-topbar-right">
@@ -51,7 +59,8 @@
     <nav class="tabs">
       <div class="container tabs-inner">
         <button class="tab active" data-tab="blacklist" type="button">不可信邮箱管理</button>
-        <button class="tab" data-tab="review" type="button">申请审核 <span id="reviewBadge" class="tab-badge" style="display:none;">0</span></button>
+        <button class="tab" data-tab="review" type="button">申请审核 <span id="reviewBadge" class="tab-badge"
+            style="display:none;">0</span></button>
         <button class="tab" data-tab="announcement" type="button">公告编辑</button>
         <button class="tab" data-tab="audit" type="button">审计日志</button>
         <button class="tab" data-tab="settings" type="button">系统设置</button>
@@ -66,7 +75,11 @@
           <div class="toolbar">
             <div class="search-group">
               <div class="search-input-wrap">
-                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round">
+                  <circle cx="11" cy="11" r="7"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
                 <input id="blSearch" class="search-input" type="text" placeholder="按邮箱或原因搜索">
               </div>
               <button id="blSearchBtn" class="search-btn" type="button">搜索</button>
@@ -195,7 +208,11 @@
             <div class="settings-card" id="inboxSettingsCard" style="display:none;">
               <div class="settings-card-head">
                 <span class="settings-card-icon settings-icon-mail">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                  </svg>
                 </span>
                 <div>
                   <div class="settings-card-title">收件箱配置</div>
@@ -204,7 +221,8 @@
               </div>
               <div class="form-field">
                 <label class="form-label" for="inboxEmail">收件箱邮箱</label>
-                <input id="inboxEmail" class="form-input" type="email" placeholder="admin@example.com" autocomplete="off" spellcheck="false">
+                <input id="inboxEmail" class="form-input" type="email" placeholder="admin@example.com"
+                  autocomplete="off" spellcheck="false">
                 <div class="form-hint">留空保存则隐藏首页「联系管理员」按钮</div>
               </div>
               <button id="inboxSaveBtn" class="btn btn-primary" type="button">保存收件箱</button>
@@ -213,7 +231,11 @@
             <div class="settings-card" id="reportLinkSettingsCard" style="display:none;">
               <div class="settings-card-head">
                 <span class="settings-card-icon settings-icon-link">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                  </svg>
                 </span>
                 <div>
                   <div class="settings-card-title">举报证据链配置</div>
@@ -225,7 +247,8 @@
               </div>
               <div class="form-field">
                 <label class="form-label" for="reportLinkDomains">允许的域名（逗号分隔）</label>
-                <input id="reportLinkDomains" class="form-input" type="text" placeholder="tieba.baidu.com" autocomplete="off" spellcheck="false">
+                <input id="reportLinkDomains" class="form-input" type="text" placeholder="tieba.baidu.com"
+                  autocomplete="off" spellcheck="false">
                 <div class="form-hint">留空表示不限制域名；多个域名用逗号分隔</div>
               </div>
               <button id="reportLinkSaveBtn" class="btn btn-primary" type="button">保存举报配置</button>
@@ -234,7 +257,11 @@
             <div class="settings-card" id="appealLinkSettingsCard" style="display:none;">
               <div class="settings-card-head">
                 <span class="settings-card-icon settings-icon-link">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                  </svg>
                 </span>
                 <div>
                   <div class="settings-card-title">申诉证据链配置</div>
@@ -246,7 +273,8 @@
               </div>
               <div class="form-field">
                 <label class="form-label" for="appealLinkDomains">允许的域名（逗号分隔）</label>
-                <input id="appealLinkDomains" class="form-input" type="text" placeholder="tieba.baidu.com" autocomplete="off" spellcheck="false">
+                <input id="appealLinkDomains" class="form-input" type="text" placeholder="tieba.baidu.com"
+                  autocomplete="off" spellcheck="false">
                 <div class="form-hint">留空表示不限制域名；多个域名用逗号分隔</div>
               </div>
               <button id="appealLinkSaveBtn" class="btn btn-primary" type="button">保存申诉配置</button>
@@ -255,7 +283,12 @@
             <div class="settings-card" id="reportImageSettingsCard" style="display:none;">
               <div class="settings-card-head">
                 <span class="settings-card-icon settings-icon-img">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                  </svg>
                 </span>
                 <div>
                   <div class="settings-card-title">举报图片配置</div>
@@ -267,7 +300,8 @@
               </div>
               <div class="form-field">
                 <label class="form-label" for="reportImageMax">最大数量（0=不限，最大 9）</label>
-                <input id="reportImageMax" class="form-input" type="number" min="0" max="9" value="3" style="width:120px;">
+                <input id="reportImageMax" class="form-input" type="number" min="0" max="9" value="3"
+                  style="width:120px;">
               </div>
               <button id="reportImageSaveBtn" class="btn btn-primary" type="button">保存举报图片配置</button>
             </div>
@@ -275,7 +309,12 @@
             <div class="settings-card" id="appealImageSettingsCard" style="display:none;">
               <div class="settings-card-head">
                 <span class="settings-card-icon settings-icon-img">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                  </svg>
                 </span>
                 <div>
                   <div class="settings-card-title">申诉图片配置</div>
@@ -287,7 +326,8 @@
               </div>
               <div class="form-field">
                 <label class="form-label" for="appealImageMax">最大数量（0=不限，最大 9）</label>
-                <input id="appealImageMax" class="form-input" type="number" min="0" max="9" value="3" style="width:120px;">
+                <input id="appealImageMax" class="form-input" type="number" min="0" max="9" value="3"
+                  style="width:120px;">
               </div>
               <button id="appealImageSaveBtn" class="btn btn-primary" type="button">保存申诉图片配置</button>
             </div>
@@ -295,7 +335,13 @@
             <div class="settings-card" id="cleanupCard" style="display:none;">
               <div class="settings-card-head">
                 <span class="settings-card-icon settings-icon-trash">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                  </svg>
                 </span>
                 <div>
                   <div class="settings-card-title">清理不可达文件</div>
@@ -310,7 +356,11 @@
             <div class="settings-card">
               <div class="settings-card-head">
                 <span class="settings-card-icon settings-icon-lock">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
                 </span>
                 <div>
                   <div class="settings-card-title">修改密码</div>
@@ -319,15 +369,18 @@
               </div>
               <div class="form-field">
                 <label class="form-label" for="pwdOld">当前密码</label>
-                <input id="pwdOld" class="form-input" type="password" placeholder="请输入当前密码" autocomplete="current-password">
+                <input id="pwdOld" class="form-input" type="password" placeholder="请输入当前密码"
+                  autocomplete="current-password">
               </div>
               <div class="form-field">
                 <label class="form-label" for="pwdNew">新密码</label>
-                <input id="pwdNew" class="form-input" type="password" placeholder="至少 8 位，含大小写字母与数字" autocomplete="new-password">
+                <input id="pwdNew" class="form-input" type="password" placeholder="至少 8 位，含大小写字母与数字"
+                  autocomplete="new-password">
               </div>
               <div class="form-field">
                 <label class="form-label" for="pwdNew2">确认新密码</label>
-                <input id="pwdNew2" class="form-input" type="password" placeholder="再次输入新密码" autocomplete="new-password">
+                <input id="pwdNew2" class="form-input" type="password" placeholder="再次输入新密码"
+                  autocomplete="new-password">
               </div>
               <button id="pwdBtn" class="btn btn-primary" type="button">修改密码</button>
             </div>
@@ -362,7 +415,8 @@
       <div class="modal-body">
         <div class="form-field">
           <label class="form-label" for="rejectSubReason">驳回原因 <span class="required">*</span></label>
-          <textarea id="rejectSubReason" class="form-textarea" rows="4" maxlength="500" placeholder="请填写驳回原因（最多 500 字）"></textarea>
+          <textarea id="rejectSubReason" class="form-textarea" rows="4" maxlength="500"
+            placeholder="请填写驳回原因（最多 500 字）"></textarea>
           <div class="form-hint"><span id="rejectReasonCount">0</span>/500</div>
         </div>
       </div>
@@ -383,19 +437,20 @@
         <form id="addForm">
           <div class="form-field">
             <label class="form-label">邮箱 *</label>
-            <input id="addEmail" class="form-input" type="email" placeholder="name@example.com" autocomplete="off" spellcheck="false">
+            <input id="addEmail" class="form-input" type="email" placeholder="name@example.com" autocomplete="off"
+              spellcheck="false">
           </div>
           <div class="form-field">
             <label class="form-label">标记原因（支持 Markdown）</label>
-            <textarea id="addReason" class="form-input" rows="4" maxlength="500" placeholder="描述被标记为不可信的原因..."></textarea>
+            <textarea id="addReason" class="form-input" rows="4" maxlength="500"
+              placeholder="描述被标记为不可信的原因..."></textarea>
             <div class="field-meta">
               <span class="char-counter" id="reasonCounter"><b id="reasonCount">0</b>/500</span>
             </div>
           </div>
           <div class="form-field">
             <label class="form-label">事件链接 *</label>
-            <input id="addLink" class="form-input" type="url" placeholder="https://tieba.baidu.com/p/..." autocomplete="off" spellcheck="false">
-            <div class="form-hint">必填项，仅支持 tieba.baidu.com 的 HTTPS 链接，未带协议时自动补全 https://</div>
+            <input id="addLink" class="form-input" type="url" autocomplete="off" spellcheck="false">
           </div>
           <div class="form-field">
             <label class="form-label">相关人（逗号分隔）</label>
@@ -442,7 +497,8 @@
         <div class="confirm-icon danger">✕</div>
         <div class="confirm-title" id="deleteTitle">删除记录</div>
         <div class="confirm-text" id="deleteText"></div>
-        <input id="deleteConfirmInput" class="form-input" type="text" placeholder="输入邮箱地址确认" autocomplete="off" spellcheck="false">
+        <input id="deleteConfirmInput" class="form-input" type="text" placeholder="输入邮箱地址确认" autocomplete="off"
+          spellcheck="false">
       </div>
       <div class="modal-footer" style="justify-content:center;">
         <button class="btn btn-secondary" data-close="deleteModal" type="button">取消</button>
@@ -461,7 +517,8 @@
       <div class="modal-body">
         <div class="form-field">
           <label class="form-label" for="newUsername">用户名 *</label>
-          <input id="newUsername" class="form-input" type="text" placeholder="3-32 位，字母、数字、下划线、减号" autocomplete="off" spellcheck="false">
+          <input id="newUsername" class="form-input" type="text" placeholder="3-32 位，字母、数字、下划线、减号" autocomplete="off"
+            spellcheck="false">
           <div class="form-hint">用户名创建后不可修改</div>
         </div>
         <div class="form-field">
@@ -594,7 +651,8 @@
         <div class="confirm-icon danger">✕</div>
         <div class="confirm-title">删除管理员</div>
         <div class="confirm-text" id="deleteUserText"></div>
-        <input id="deleteUserConfirmInput" class="form-input" type="text" placeholder="输入用户名确认" autocomplete="off" spellcheck="false">
+        <input id="deleteUserConfirmInput" class="form-input" type="text" placeholder="输入用户名确认" autocomplete="off"
+          spellcheck="false">
       </div>
       <div class="modal-footer" style="justify-content:center;">
         <button class="btn btn-secondary" data-close="deleteUserModal" type="button">取消</button>
@@ -614,4 +672,5 @@
   <script src="/assets/js/common.js"></script>
   <script src="/assets/js/admin.js"></script>
 </body>
+
 </html>
