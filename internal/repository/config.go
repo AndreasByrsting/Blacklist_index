@@ -31,3 +31,11 @@ func (r *ConfigRepo) Set(key, value string) error {
 		ON CONFLICT(key) DO UPDATE SET value = excluded.value`, key, value)
 	return err
 }
+
+// Increment 将指定键的数值加一并持久化（键不存在时从 1 开始）。
+func (r *ConfigRepo) Increment(key string) error {
+	_, err := r.db.Exec(`
+		INSERT INTO app_config (key, value) VALUES (?, '1')
+		ON CONFLICT(key) DO UPDATE SET value = CAST(value AS INTEGER) + 1`, key)
+	return err
+}

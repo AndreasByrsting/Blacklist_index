@@ -28,6 +28,10 @@ func (h *Handler) Check(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusTooManyRequests, map[string]any{"blocked": false, "message": "查询过于频繁，请 5 分钟后再试"})
 		return
 	}
+	if err := h.setting.IncrementQueryCount(); err != nil {
+		h.writeError(w, err)
+		return
+	}
 	email := r.URL.Query().Get("email")
 	rec, err := h.blacklist.Check(email)
 	if err != nil {
@@ -79,6 +83,19 @@ func (h *Handler) SiteConfig(w http.ResponseWriter, r *http.Request) {
 		"report_image_max":         reportImg.MaxCount,
 		"appeal_image_required":    appealImg.Required,
 		"appeal_image_max":         appealImg.MaxCount,
+	})
+}
+
+// Stats 公开首页统计（查询次数与展示开关）。
+func (h *Handler) Stats(w http.ResponseWriter, r *http.Request) {
+	count, err := h.setting.GetQueryCount()
+	if err != nil {
+		h.writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"enabled": h.setting.GetStatsEnabled(),
+		"count":   count,
 	})
 }
 

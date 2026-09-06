@@ -120,7 +120,7 @@
         }
       }
       if (!allowed) {
-        return '为了用户安全暂不支持该网站，仅支持 ' + domains.join('、') + '，后续将逐步适配';
+        return '为了用户安全暂不支持该网站，仅支持 ' + domains.join('、') + '，可以尝试联系管理员添加站点支持';
       }
     }
     return null;

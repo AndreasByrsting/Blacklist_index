@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	ConfigKeyInbox                 = "inbox_email"
+	ConfigKeyInbox                  = "inbox_email"
 	ConfigKeyReportEvidenceRequired = "report_evidence_required"
 	ConfigKeyReportLinkDomains      = "report_link_domains"
 	ConfigKeyAppealEvidenceRequired = "appeal_evidence_required"
@@ -19,6 +19,8 @@ const (
 	ConfigKeyReportImageMax         = "report_image_max"
 	ConfigKeyAppealImageRequired    = "appeal_image_required"
 	ConfigKeyAppealImageMax         = "appeal_image_max"
+	ConfigKeyQueryCount             = "query_count"
+	ConfigKeyStatsEnabled           = "stats_enabled"
 )
 
 // LinkPolicy 保存某一类提交（举报或申诉）的证据链接校验策略。
@@ -187,6 +189,43 @@ func (s *SettingService) SetAppealImageConfig(required bool, maxCount int, ip, u
 		return err
 	}
 	s.audit.Log("admin", ActionEditSettings, "appeal_image_config", ip, ua)
+	return nil
+}
+
+// ——— 首页统计（查询次数） ———
+
+// GetQueryCount 返回累计查询次数，未初始化时返回 0。
+func (s *SettingService) GetQueryCount() (int64, error) {
+	v, err := s.repo.Get(ConfigKeyQueryCount)
+	if errors.Is(err, repository.ErrNotFound) {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	n, err := strconv.ParseInt(strings.TrimSpace(v), 10, 64)
+	if err != nil {
+		return 0, nil
+	}
+	return n, nil
+}
+
+// IncrementQueryCount 将查询计数加一。
+func (s *SettingService) IncrementQueryCount() error {
+	return s.repo.Increment(ConfigKeyQueryCount)
+}
+
+// GetStatsEnabled 返回是否在首页展示查询统计。
+func (s *SettingService) GetStatsEnabled() bool {
+	return s.getBool(ConfigKeyStatsEnabled, false)
+}
+
+// SetStatsEnabled 保存首页统计展示开关。
+func (s *SettingService) SetStatsEnabled(enabled bool, ip, ua string) error {
+	if err := s.repo.Set(ConfigKeyStatsEnabled, boolStr(enabled)); err != nil {
+		return err
+	}
+	s.audit.Log("admin", ActionEditSettings, "stats_enabled", ip, ua)
 	return nil
 }
 

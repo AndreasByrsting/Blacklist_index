@@ -104,6 +104,7 @@
   function updateAdminUI() {
             $('usersTab').style.display = state.isSuper ? '' : 'none';
             $('inboxSettingsCard').style.display = state.isSuper ? '' : 'none';
+            $('statsSettingsCard').style.display = state.isSuper ? '' : 'none';
             $('reportLinkSettingsCard').style.display = state.isSuper ? '' : 'none';
             $('appealLinkSettingsCard').style.display = state.isSuper ? '' : 'none';
             $('reportImageSettingsCard').style.display = state.isSuper ? '' : 'none';
@@ -819,6 +820,7 @@
       $('reportImageMax').value = data.report_image_max != null ? data.report_image_max : 3;
       $('appealImageRequired').checked = data.appeal_image_required === true;
       $('appealImageMax').value = data.appeal_image_max != null ? data.appeal_image_max : 3;
+      $('statsEnabled').checked = data.stats_enabled === true;
     } catch (e) { /* adminApi 已处理 */ }
   }
 
@@ -834,6 +836,21 @@
       App.toast('error', err.message);
     } finally {
       App.setLoading($('inboxSaveBtn'), false);
+    }
+  });
+
+  // ===== 系统设置：首页统计展示 =====
+  $('statsSaveBtn').addEventListener('click', async function () {
+    const enabled = $('statsEnabled').checked;
+    App.setLoading($('statsSaveBtn'), true, '保存中…');
+    try {
+      await adminApi('/api/v1/admin/settings', { method: 'PUT', body: { stats_enabled: enabled } });
+      await loadSettings();
+      App.toast('success', enabled ? '首页统计展示已开启' : '首页统计展示已关闭');
+    } catch (err) {
+      App.toast('error', err.message);
+    } finally {
+      App.setLoading($('statsSaveBtn'), false);
     }
   });
 

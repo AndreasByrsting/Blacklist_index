@@ -96,6 +96,25 @@
         </div>
       </section>
 
+      <!-- 首页统计展示（查询次数，超管可开关） -->
+      <section id="statsCard" class="stats-section" style="display:none;" aria-hidden="true">
+        <div class="stats-card">
+          <div class="stats-num-line">
+            <span class="stats-affix">已为</span>
+            <span class="stats-number" id="statsNumber">0</span>
+            <span class="stats-affix">人提供邀请决策</span>
+          </div>
+          <div class="stats-caption">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z"></path>
+              <path d="M9 12l2 2 4-4"></path>
+            </svg>
+            <span>数据实时累计，源于每一次邮箱查询</span>
+          </div>
+        </div>
+      </section>
+
       <!-- 管理员登录卡片 -->
       <section id="loginCard" class="search-card home-login-card" style="display:none;">
         <div class="search-head">
@@ -276,8 +295,7 @@
         <div class="delay-confirm-list">
           <ul>
             <li>我确认提交的内容真实、合规，不存在恶意举报</li>
-            <li>我已核实事件链接有效，能够作为证据</li>
-            <li>我理解虚假标记可能导致被吧务追究责任</li>
+            <li>我已核实事件链接、附件有效，能够作为证据</li>
           </ul>
         </div>
         <div class="delay-confirm-tip">

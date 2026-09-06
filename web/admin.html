@@ -228,6 +228,25 @@
               <button id="inboxSaveBtn" class="btn btn-primary" type="button">保存收件箱</button>
             </div>
 
+            <div class="settings-card" id="statsSettingsCard" style="display:none;">
+              <div class="settings-card-head">
+                <span class="settings-card-icon settings-icon-chart">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M3 12h4l2 4 4-8 2 4h6"></path>
+                  </svg>
+                </span>
+                <div>
+                  <div class="settings-card-title">首页统计展示</div>
+                  <div class="settings-card-desc">开启后首页将展示「已为 N 人提供邀请决策」的累计查询次数。数据来自公开查询接口调用次数，每次查询 +1。</div>
+                </div>
+              </div>
+              <div class="form-field">
+                <label class="form-label"><input id="statsEnabled" type="checkbox"> 在首页展示查询统计</label>
+              </div>
+              <button id="statsSaveBtn" class="btn btn-primary" type="button">保存统计设置</button>
+            </div>
+
             <div class="settings-card" id="reportLinkSettingsCard" style="display:none;">
               <div class="settings-card-head">
                 <span class="settings-card-icon settings-icon-link">

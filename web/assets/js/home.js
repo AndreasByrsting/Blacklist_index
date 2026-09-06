@@ -141,6 +141,9 @@
   let appealImageConfig = { required: false, maxCount: 3 };
   let reportImages = [];
   let appealImages = [];
+  let statsEnabled = false;
+  let statsCurrent = 0;
+  let statsTarget = 0;
 
   const ICON_LOGIN = '<svg class="entry-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>';
   const ICON_BACK = '<svg class="entry-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>';
@@ -150,6 +153,7 @@
     $('searchCard').style.display = show ? 'none' : '';
     $('loginCard').style.display = show ? '' : 'none';
     $('announcementCard').style.display = (show || !hasAnnouncement) ? 'none' : '';
+    updateStatsVisibility();
     $('adminEntryBtn').innerHTML = show
       ? ICON_BACK + '<span id="adminEntryLabel">返回首页</span>'
       : ICON_LOGIN + '<span id="adminEntryLabel">管理员登录</span>';
@@ -345,6 +349,7 @@
       if (data.blocked) blockedState(data);
       else if (data.similar) similarState();
       else safeState();
+      bumpStats();
     } catch (e) {
       App.toast('error', e.message);
       emptyState();
@@ -361,6 +366,66 @@
       emailInput.focus();
     }
   });
+
+  // ===== 首页统计（查询次数，超管可开关）=====
+  function formatCount(n) {
+    return n.toLocaleString('en-US');
+  }
+
+  function updateStatsVisibility() {
+    var card = $('statsCard');
+    if (!card) return;
+    var isLogin = $('loginCard').style.display !== 'none';
+    card.style.display = (statsEnabled && !isLogin) ? '' : 'none';
+  }
+
+  function animateCount(to) {
+    var el = $('statsNumber');
+    if (!el) return;
+    var from = statsCurrent;
+    var dur = 1100;
+    var start = performance.now();
+    function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+    function frame(now) {
+      var t = (now - start) / dur;
+      if (t < 0) t = 0;
+      if (t > 1) t = 1;
+      statsCurrent = Math.round(from + (to - from) * easeOutCubic(t));
+      el.textContent = formatCount(statsCurrent);
+      if (t < 1) {
+        requestAnimationFrame(frame);
+      } else {
+        statsCurrent = to;
+        el.textContent = formatCount(to);
+        el.classList.remove('pop');
+        void el.offsetWidth;
+        el.classList.add('pop');
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function bumpStats() {
+    if (!statsEnabled) return;
+    statsTarget += 1;
+    animateCount(statsTarget);
+  }
+
+  (async function loadStats() {
+    try {
+      const data = await App.api('/api/v1/stats');
+      statsEnabled = !!data.enabled;
+      if (statsEnabled) {
+        statsCurrent = 0;
+        statsTarget = parseInt(data.count, 10) || 0;
+        $('statsCard').setAttribute('aria-hidden', 'false');
+        updateStatsVisibility();
+        animateCount(statsTarget);
+      } else {
+        updateStatsVisibility();
+      }
+    } catch (e) { /* 静默忽略统计加载失败 */ }
+  })();
 
   // ===== 提交 & 申诉 & 查询进度 =====
   $('submitBlWrap').style.display = ''; // 始终显示提交入口

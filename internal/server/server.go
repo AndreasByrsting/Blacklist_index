@@ -29,6 +29,7 @@ func New(h *handler.Handler, dashboardPath, siteName string, assets fs.FS) http.
 	mux.HandleFunc("GET /api/v1/check", h.Check)
 	mux.HandleFunc("GET /api/v1/announcement", h.Announcement)
 	mux.HandleFunc("GET /api/v1/site-config", h.SiteConfig)
+	mux.HandleFunc("GET /api/v1/stats", h.Stats)
 	mux.HandleFunc("POST /api/v1/admin/login", h.Login)
 	mux.HandleFunc("GET /api/v1/admin/status", h.Status)
 	mux.HandleFunc("POST /api/v1/submit/report", h.SubmitReport)

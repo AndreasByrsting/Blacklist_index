@@ -648,6 +648,99 @@ button {
   color: var(--text);
 }
 
+/* ===== 首页统计展示 ===== */
+.stats-section {
+  width: 100%;
+  max-width: 640px;
+  margin-top: 22px;
+}
+
+.stats-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(79, 110, 247, 0.07) 0%, rgba(124, 92, 252, 0.09) 100%);
+  border: 1px solid rgba(79, 110, 247, 0.16);
+  border-radius: var(--radius-card);
+  padding: 24px 28px;
+  text-align: center;
+  animation: fadeUp 0.45s cubic-bezier(0.22, 0.9, 0.3, 1);
+}
+
+.stats-card::before {
+  content: "";
+  position: absolute;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 320px;
+  height: 140px;
+  background: radial-gradient(closest-side, rgba(124, 92, 252, 0.18), transparent);
+  pointer-events: none;
+}
+
+.stats-num-line {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.stats-affix {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.stats-number {
+  display: inline-block;
+  font-size: 3.25rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  background: var(--primary-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.stats-number.pop {
+  animation: numberPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes numberPop {
+  0% {
+    transform: scale(1);
+  }
+
+  40% {
+    transform: scale(1.14);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.stats-caption {
+  position: relative;
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.stats-caption svg {
+  width: 14px;
+  height: 14px;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
 /* ===== 页脚 ===== */
 .site-footer {
   padding: 24px 0;
@@ -2472,6 +2565,18 @@ table.data-table {
     line-height: 1.75rem;
   }
 
+  .stats-card {
+    padding: 20px 18px;
+  }
+
+  .stats-number {
+    font-size: 2.5rem;
+  }
+
+  .stats-affix {
+    font-size: 0.9375rem;
+  }
+
   body {
     font-size: 0.875rem;
   }
@@ -2574,6 +2679,11 @@ table.data-table {
 .settings-icon-img {
   background: #F5F3FF;
   color: #7C5CFC;
+}
+
+.settings-icon-chart {
+  background: #EFF6FF;
+  color: #2563EB;
 }
 
 .upload-zone {

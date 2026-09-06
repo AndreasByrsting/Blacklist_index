@@ -45,8 +45,8 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 	})
 	writeSuccess(w, map[string]any{
-		"username":  admin.Username,
-		"is_super":  admin.IsSuper,
+		"username": admin.Username,
+		"is_super": admin.IsSuper,
 	})
 }
 
@@ -282,15 +282,16 @@ func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 }
 
 type settingsRequest struct {
-	InboxEmail              *string `json:"inbox_email,omitempty"`
-	ReportEvidenceRequired  *bool   `json:"report_evidence_required,omitempty"`
-	ReportLinkDomains       *string `json:"report_link_domains,omitempty"`
-	AppealEvidenceRequired  *bool   `json:"appeal_evidence_required,omitempty"`
-	AppealLinkDomains       *string `json:"appeal_link_domains,omitempty"`
-	ReportImageRequired     *bool   `json:"report_image_required,omitempty"`
-	ReportImageMax          *int    `json:"report_image_max,omitempty"`
-	AppealImageRequired     *bool   `json:"appeal_image_required,omitempty"`
-	AppealImageMax          *int    `json:"appeal_image_max,omitempty"`
+	InboxEmail             *string `json:"inbox_email,omitempty"`
+	ReportEvidenceRequired *bool   `json:"report_evidence_required,omitempty"`
+	ReportLinkDomains      *string `json:"report_link_domains,omitempty"`
+	AppealEvidenceRequired *bool   `json:"appeal_evidence_required,omitempty"`
+	AppealLinkDomains      *string `json:"appeal_link_domains,omitempty"`
+	ReportImageRequired    *bool   `json:"report_image_required,omitempty"`
+	ReportImageMax         *int    `json:"report_image_max,omitempty"`
+	AppealImageRequired    *bool   `json:"appeal_image_required,omitempty"`
+	AppealImageMax         *int    `json:"appeal_image_max,omitempty"`
+	StatsEnabled           *bool   `json:"stats_enabled,omitempty"`
 }
 
 // GetSettings 获取站点设置（收件箱、证据链配置等）。
@@ -310,10 +311,11 @@ func (h *Handler) GetSettings(w http.ResponseWriter, r *http.Request) {
 		"report_link_domains":      strings.Join(report.Domains, ", "),
 		"appeal_evidence_required": appeal.EvidenceRequired,
 		"appeal_link_domains":      strings.Join(appeal.Domains, ", "),
-		"report_image_required":   reportImg.Required,
+		"report_image_required":    reportImg.Required,
 		"report_image_max":         reportImg.MaxCount,
-		"appeal_image_required":   appealImg.Required,
+		"appeal_image_required":    appealImg.Required,
 		"appeal_image_max":         appealImg.MaxCount,
+		"stats_enabled":            h.setting.GetStatsEnabled(),
 	})
 }
 
@@ -385,6 +387,12 @@ func (h *Handler) SaveSettings(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	if req.StatsEnabled != nil {
+		if err := h.setting.SetStatsEnabled(*req.StatsEnabled, clientIP(r), r.UserAgent()); err != nil {
+			h.writeError(w, err)
+			return
+		}
+	}
 	writeSuccess(w, nil)
 }
 
@@ -417,9 +425,9 @@ func (h *Handler) CreateAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeSuccess(w, map[string]any{
-		"password":    password,
-		"totp_secret": totpSecret,
-		"totp_setup_url":   service.TOTPSetupURL(totpSecret, h.cfg.SiteName, req.Username),
+		"password":       password,
+		"totp_secret":    totpSecret,
+		"totp_setup_url": service.TOTPSetupURL(totpSecret, h.cfg.SiteName, req.Username),
 	})
 }
 
@@ -449,8 +457,8 @@ func (h *Handler) GetAdminTOTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeSuccess(w, map[string]any{
-		"totp_secret": admin.TOTPSecret,
-		"totp_setup_url":   service.TOTPSetupURL(admin.TOTPSecret, h.cfg.SiteName, admin.Username),
+		"totp_secret":    admin.TOTPSecret,
+		"totp_setup_url": service.TOTPSetupURL(admin.TOTPSecret, h.cfg.SiteName, admin.Username),
 	})
 }
 
@@ -472,8 +480,8 @@ func (h *Handler) ResetAdminTOTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeSuccess(w, map[string]any{
-		"totp_secret": secret,
-		"totp_setup_url":   service.TOTPSetupURL(secret, h.cfg.SiteName, admin.Username),
+		"totp_secret":    secret,
+		"totp_setup_url": service.TOTPSetupURL(secret, h.cfg.SiteName, admin.Username),
 	})
 }
 
